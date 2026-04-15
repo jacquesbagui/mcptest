@@ -1,4 +1,4 @@
-"""mcpcheck — contract testing for MCP servers."""
+"""mymcp — contract testing for MCP servers."""
 
 from .client import McpClient, StdioClient, build_client
 from .contract import Contract, ContractError, load_contract

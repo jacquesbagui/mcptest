@@ -1,17 +1,17 @@
 {
-  "name": "mcpcheck",
+  "name": "mymcp",
   "version": "0.1.0",
   "description": "Contract testing for MCP servers — TypeScript SDK.",
   "keywords": ["mcp", "model-context-protocol", "testing", "contract", "typescript", "sdk"],
   "author": "Jacques Bagui <jacques.bagui@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/jacquesbagui/mcpcheck",
+  "homepage": "https://github.com/jacquesbagui/mymcp",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jacquesbagui/mcpcheck.git",
+    "url": "git+https://github.com/jacquesbagui/mymcp.git",
     "directory": "packages/sdk-node"
   },
-  "bugs": "https://github.com/jacquesbagui/mcpcheck/issues",
+  "bugs": "https://github.com/jacquesbagui/mymcp/issues",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

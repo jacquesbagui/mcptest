@@ -1,4 +1,4 @@
-"""Typer-based CLI: `mcpcheck run|snapshot|diff|validate`."""
+"""Typer-based CLI: `mymcp run|snapshot|diff|validate`."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from .reporter.junit import JunitReporter
 from .snapshot import capture_snapshot, diff_snapshots, load_snapshot, save_snapshot
 
 app = typer.Typer(
-    name="mcpcheck",
+    name="mymcp",
     help="Contract testing and regression detection for MCP servers.",
     no_args_is_help=True,
     add_completion=False,
@@ -35,7 +35,7 @@ err_console = Console(stderr=True)
 
 def _version_callback(value: bool) -> None:
     if value:
-        typer.echo(f"mcpcheck {__version__}")
+        typer.echo(f"mymcp {__version__}")
         raise typer.Exit()
 
 
@@ -46,7 +46,7 @@ def _root(
         typer.Option("--version", callback=_version_callback, is_eager=True),
     ] = None,
 ) -> None:
-    """mcpcheck — pytest for your MCP server."""
+    """mymcp — pytest for your MCP server."""
 
 
 # ---------- run ----------

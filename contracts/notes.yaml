@@ -1,7 +1,7 @@
 # Example contract: a notes MCP server.
 #
 # Run:
-#   NOTES_DIR=/tmp/mcpcheck-notes-demo mcpcheck run --contract contracts/notes.yaml
+#   NOTES_DIR=/tmp/mymcp-notes-demo mymcp run --contract contracts/notes.yaml
 #
 # (Seed a few *.md files in NOTES_DIR first if you want search assertions to
 # match real content.)
@@ -11,7 +11,7 @@ server:
   transport: stdio
   command: python packages/core/examples/notes_server.py
   env:
-    NOTES_DIR: /tmp/mcpcheck-notes-demo
+    NOTES_DIR: /tmp/mymcp-notes-demo
 
 tools:
   - name: list_notes
@@ -74,12 +74,12 @@ tools:
       - call:
           args:
             title: "smoke test note"
-            body: "created by mcpcheck"
+            body: "created by mymcp"
         expect:
           status: success
           response_contains: "smoke-test-note"
 
 snapshots:
   enabled: true
-  baseline: .mcpcheck/notes-baseline.json
+  baseline: .mymcp/notes-baseline.json
   fail_on_regression: true
