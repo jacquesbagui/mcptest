@@ -1,4 +1,4 @@
-"""Pydantic models for the mymcp contract YAML schema."""
+"""Pydantic models for the mcpact contract YAML schema."""
 
 from __future__ import annotations
 
@@ -66,7 +66,7 @@ class ToolSpec(StrictModel):
 
 class SnapshotConfig(StrictModel):
     enabled: bool = False
-    baseline: str = ".mymcp/baseline.json"
+    baseline: str = ".mcpact/baseline.json"
     fail_on_regression: bool = True
     warn_on_addition: bool = False
 

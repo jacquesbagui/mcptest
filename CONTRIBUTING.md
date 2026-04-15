@@ -1,4 +1,4 @@
-# Contributing to mymcp
+# Contributing to mcpact
 
 Thanks for your interest in making MCP servers more testable. This project is
 small and we'd like to keep it focused — please open an issue before starting
@@ -7,7 +7,7 @@ any non-trivial work so we can agree on scope.
 ## Repository layout
 
 ```
-mymcp/
+mcpact/
 ├── packages/
 │   ├── core/         # Python engine + CLI (the current shipped package)
 │   └── sdk-node/     # TypeScript SDK (planned)
@@ -54,7 +54,7 @@ All three must pass. New features must come with tests.
 
 - Python 3.10+, strict typing. `mypy --strict` must pass.
 - Pydantic v2 models are frozen and reject unknown keys (`extra="forbid"`).
-- Public API lives in `mymcp/__init__.py` — keep it small and curated.
+- Public API lives in `mcpact/__init__.py` — keep it small and curated.
 - Prefer explicit imports over re-export chains.
 
 ## Releasing

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mymcp"
+name = "mcpact"
 version = "0.1.0"
 description = "Contract testing and regression detection for MCP servers."
 readme = "README.md"
@@ -44,15 +44,15 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jacquesbagui/mymcp"
-Issues = "https://github.com/jacquesbagui/mymcp/issues"
-Repository = "https://github.com/jacquesbagui/mymcp"
+Homepage = "https://github.com/jacquesbagui/mcpact"
+Issues = "https://github.com/jacquesbagui/mcpact/issues"
+Repository = "https://github.com/jacquesbagui/mcpact"
 
 [project.scripts]
-mymcp = "mymcp.cli:app"
+mcpact = "mcpact.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mymcp"]
+packages = ["src/mcpact"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -60,7 +60,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["mymcp"]
+source = ["mcpact"]
 
 [tool.coverage.report]
 show_missing = true

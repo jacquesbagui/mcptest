@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { ContractError, loadContract } from "../src/index.js";
 
 function tmpFile(content: string): string {
-  const dir = mkdtempSync(join(tmpdir(), "mymcp-"));
+  const dir = mkdtempSync(join(tmpdir(), "mcpact-"));
   const path = join(dir, "c.yaml");
   writeFileSync(path, content, "utf-8");
   return path;
