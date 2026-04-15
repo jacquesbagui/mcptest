@@ -1,36 +1,80 @@
-# @mcptest/sdk (Node.js)
+# mcptest (Node.js SDK)
 
-> TypeScript SDK for [mcptest](https://github.com/jacquesbagui/mcptest) —
-> contract testing for MCP servers, usable from any Node test runner.
+TypeScript SDK for [mcptest](https://github.com/jacquesbagui/mcptest) — contract
+testing for MCP servers, usable from any Node test runner.
 
-**Status:** not yet released. See the [repository README](../../README.md) and
-the Python `mcptest` package in [`../core`](../core) for the current shipped
-functionality.
+> Pre-release. Not yet published to npm. Build locally with `pnpm build` to try it.
 
-## Planned API
+## Install
+
+```bash
+npm install mcptest
+```
+
+Requires Node.js 20+.
+
+## Fluent API
 
 ```ts
 import { McpTest } from "mcptest";
 
-const tester = new McpTest({
-  transport: "stdio",
-  command: "python server.py",
-});
+const t = new McpTest({ transport: "stdio", command: "python server.py" });
+await t.connect();
 
-await tester.connect();
-await tester.assertToolExists("search_files");
+await t.assertToolExists("search_files");
 
-const result = await tester.call("search_files", { query: "hello" });
-tester.expect(result).toSucceed().withinMs(1000);
+const out = await t.call("search_files", { query: "hello" });
+t.expect(out).toSucceed().toContain("hello").withinMs(1000);
 
-const report = await tester.runContract("./contracts/my-server.yaml");
-console.log(report.summary());
-
-await tester.disconnect();
+await t.disconnect();
 ```
 
-Contract YAML files are **the same schema** as the Python core — a single
-contract runs identically from either language.
+Works with Jest, Vitest, and any other Node test runner — no runtime
+integration required.
+
+## Run a YAML contract
+
+The contract format is identical to the Python core. The same file runs in
+either language.
+
+```ts
+import { McpTest } from "mcptest";
+
+const t = new McpTest({ transport: "stdio", command: "python server.py" });
+await t.connect();
+const report = await t.runContract("./contracts/my-server.yaml");
+console.log(report.summary());
+await t.disconnect();
+
+if (!report.ok) process.exit(1);
+```
+
+## Low-level API
+
+If you don't want the fluent wrapper:
+
+```ts
+import { buildClient, loadContract, runContract } from "mcptest";
+
+const contract = loadContract("./contracts/my-server.yaml");
+const client = buildClient(contract.server);
+await client.connect();
+try {
+  const report = await runContract(contract, client);
+  console.log(report.summary());
+} finally {
+  await client.close();
+}
+```
+
+## Development
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build
+```
 
 ## License
 
