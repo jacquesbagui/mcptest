@@ -1,17 +1,17 @@
 {
-  "name": "mymcp",
+  "name": "mcpact",
   "version": "0.1.0",
   "description": "Contract testing for MCP servers — TypeScript SDK.",
   "keywords": ["mcp", "model-context-protocol", "testing", "contract", "typescript", "sdk"],
   "author": "Jacques Bagui <jacques.bagui@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/jacquesbagui/mymcp",
+  "homepage": "https://github.com/jacquesbagui/mcpact",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jacquesbagui/mymcp.git",
+    "url": "git+https://github.com/jacquesbagui/mcpact.git",
     "directory": "packages/sdk-node"
   },
-  "bugs": "https://github.com/jacquesbagui/mymcp/issues",
+  "bugs": "https://github.com/jacquesbagui/mcpact/issues",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

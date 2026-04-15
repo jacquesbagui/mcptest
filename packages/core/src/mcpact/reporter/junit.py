@@ -9,7 +9,7 @@ from ..report import CheckStatus, Report
 
 
 class JunitReporter:
-    def render(self, report: Report, out: Path | None = None, suite: str = "mymcp") -> str:
+    def render(self, report: Report, out: Path | None = None, suite: str = "mcpact") -> str:
         testsuite = ET.Element(
             "testsuite",
             {

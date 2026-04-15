@@ -16,7 +16,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: mymcp version
+      label: mcpact version
       placeholder: "0.1.0"
     validations:
       required: true

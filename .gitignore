@@ -53,8 +53,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# mymcp runtime artefacts
-.mymcp/
+# mcpact runtime artefacts
+.mcpact/
 contracts/**/baseline.json
 
 # Editors / OS

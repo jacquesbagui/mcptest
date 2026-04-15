@@ -2,13 +2,13 @@
 
 ## Reporting a vulnerability
 
-If you believe you have found a security vulnerability in mymcp, **please do
+If you believe you have found a security vulnerability in mcpact, **please do
 not open a public issue**. Instead:
 
 1. Use GitHub's private vulnerability reporting:
-   <https://github.com/jacquesbagui/mymcp/security/advisories/new>
+   <https://github.com/jacquesbagui/mcpact/security/advisories/new>
 2. Or email the maintainer directly: **jacques.bagui@gmail.com** with a
-   subject line starting with `[mymcp security]`.
+   subject line starting with `[mcpact security]`.
 
 Include, to the extent possible:
 
@@ -22,21 +22,21 @@ please follow up — the maintainer may have missed the first message.
 
 ## Supported versions
 
-mymcp is pre-1.0. Only the latest released versions of `mymcp` (PyPI) and
-`mymcp` (npm) receive security fixes. Once 1.0 ships, this section will be
+mcpact is pre-1.0. Only the latest released versions of `mcpact` (PyPI) and
+`mcpact` (npm) receive security fixes. Once 1.0 ships, this section will be
 updated with a formal support matrix.
 
 ## Scope
 
 In scope:
 
-- The Python package `mymcp` (CLI + core).
-- The Node.js package `mymcp` (SDK).
+- The Python package `mcpact` (CLI + core).
+- The Node.js package `mcpact` (SDK).
 - The contents of this repository, including CI workflows.
 
 Out of scope:
 
-- Third-party MCP servers tested *with* mymcp — report those upstream.
+- Third-party MCP servers tested *with* mcpact — report those upstream.
 - Denial of service caused by a user's own contract against their own server.
 
 ## Disclosure
