@@ -1,0 +1,55 @@
+name: Publish (PyPI)
+
+on:
+  push:
+    tags:
+      - "core-v*"
+
+jobs:
+  build-and-publish:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/mcptest
+    permissions:
+      id-token: write  # required for PyPI trusted publishing
+      contents: read
+    defaults:
+      run:
+        working-directory: packages/core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dev dependencies
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+
+      - name: Run tests (gating publish)
+        run: |
+          .venv/bin/ruff check src tests
+          .venv/bin/mypy src
+          .venv/bin/pytest -q
+
+      - name: Verify tag matches package version
+        run: |
+          TAG="${GITHUB_REF_NAME#core-v}"
+          PKG=$(.venv/bin/python -c "import tomllib, pathlib; \
+            print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "tag=$TAG pkg=$PKG"
+          test "$TAG" = "$PKG"
+
+      - name: Build wheel + sdist
+        run: uv build
+
+      - name: Publish to PyPI (trusted publishing)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/core/dist

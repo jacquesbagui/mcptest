@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or help
+    url: https://github.com/jacquesbagui/mcptest/discussions
+    about: Use GitHub Discussions for usage questions and ideas.
