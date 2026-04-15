@@ -3,7 +3,8 @@
 TypeScript SDK for [mymcp](https://github.com/jacquesbagui/mymcp) — contract
 testing for MCP servers, usable from any Node test runner.
 
-> Pre-release. Not yet published to npm. Build locally with `pnpm build` to try it.
+> Pre-1.0 — API may change. Reports issues at
+> <https://github.com/jacquesbagui/mymcp/issues>.
 
 ## Install
 

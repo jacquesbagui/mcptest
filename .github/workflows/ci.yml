@@ -11,6 +11,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  readme-sync:
+    name: README sync (root ↔ core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify packages/core/README.md matches README.md
+        run: |
+          if ! diff -q README.md packages/core/README.md >/dev/null; then
+            echo "::error::packages/core/README.md is out of sync with README.md."
+            echo "Run: cp README.md packages/core/README.md"
+            diff README.md packages/core/README.md | head -60
+            exit 1
+          fi
+
   python:
     name: Python (${{ matrix.python-version }})
     runs-on: ubuntu-latest
