@@ -1,8 +1,8 @@
 import json
 from xml.etree import ElementTree as ET
 
-from mcptest.report import CheckResult, CheckStatus, Report
-from mcptest.reporter import HtmlReporter, JsonReporter, JunitReporter
+from mcpcheck.report import CheckResult, CheckStatus, Report
+from mcpcheck.reporter import HtmlReporter, JsonReporter, JunitReporter
 
 
 def _report() -> Report:

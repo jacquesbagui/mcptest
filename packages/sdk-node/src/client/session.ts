@@ -16,7 +16,7 @@ export abstract class SessionClient implements McpClient {
     if (this.client) return;
     const transport = this.createTransport();
     const client = new Client(
-      { name: "mcptest", version: "0.1.0" },
+      { name: "mcpcheck", version: "0.1.0" },
       { capabilities: {} },
     );
     await client.connect(transport);

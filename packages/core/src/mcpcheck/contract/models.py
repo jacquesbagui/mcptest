@@ -1,4 +1,4 @@
-"""Pydantic models for the mcptest contract YAML schema."""
+"""Pydantic models for the mcpcheck contract YAML schema."""
 
 from __future__ import annotations
 
@@ -66,7 +66,7 @@ class ToolSpec(StrictModel):
 
 class SnapshotConfig(StrictModel):
     enabled: bool = False
-    baseline: str = ".mcptest/baseline.json"
+    baseline: str = ".mcpcheck/baseline.json"
     fail_on_regression: bool = True
     warn_on_addition: bool = False
 

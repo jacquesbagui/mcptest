@@ -12,9 +12,9 @@ from pathlib import Path
 
 import pytest
 
-from mcptest.client.http import HttpClient
-from mcptest.contract.engine import run_contract
-from mcptest.contract.models import (
+from mcpcheck.client.http import HttpClient
+from mcpcheck.contract.engine import run_contract
+from mcpcheck.contract.models import (
     Assertion,
     CallSpec,
     Contract,

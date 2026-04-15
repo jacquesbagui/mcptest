@@ -16,7 +16,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: mcptest version
+      label: mcpcheck version
       placeholder: "0.1.0"
     validations:
       required: true
