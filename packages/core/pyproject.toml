@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcptest"
+version = "0.1.0"
+description = "Contract testing and regression detection for MCP servers."
+readme = "../../README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Jacques Bagui", email = "jacques.bagui@gmail.com" }]
+keywords = ["mcp", "testing", "contract", "llm", "regression", "detection"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "mcp>=1.2.0",
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+    "rich>=13.7",
+    "jsonschema>=4.21",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "types-PyYAML",
+    "types-jsonschema",
+]
+
+[project.urls]
+Homepage = "https://github.com/jacquesbagui/mcptest"
+Issues = "https://github.com/jacquesbagui/mcptest/issues"
+Repository = "https://github.com/jacquesbagui/mcptest"
+
+[project.scripts]
+mcptest = "mcptest.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcptest"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+disallow_untyped_defs = true

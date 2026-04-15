@@ -1,0 +1,42 @@
+server:
+  name: toy
+  transport: stdio
+  command: python packages/core/examples/toy_server.py
+
+tools:
+  - name: echo
+    must_exist: true
+    description_contains: "Echo"
+    input_schema:
+      required:
+        - message
+      properties:
+        message:
+          type: string
+    assertions:
+      - call:
+          args:
+            message: "hello world"
+        expect:
+          status: success
+          response_contains: "hello world"
+          max_latency_ms: 2000
+
+  - name: add
+    must_exist: true
+    assertions:
+      - call:
+          args:
+            a: 2
+            b: 3
+        expect:
+          status: success
+          response_contains: "5"
+
+  - name: boom
+    must_exist: true
+    assertions:
+      - call:
+          args: {}
+        expect:
+          status: error
