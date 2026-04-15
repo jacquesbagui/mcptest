@@ -24,6 +24,8 @@ ENV/
 .coverage
 .coverage.*
 htmlcov/
+coverage.xml
+coverage/
 .tox/
 .nox/
 coverage.xml

@@ -43,8 +43,17 @@ jobs:
       - name: Mypy
         run: .venv/bin/mypy src
 
-      - name: Pytest
-        run: .venv/bin/pytest -q
+      - name: Pytest (with coverage)
+        run: .venv/bin/pytest --cov=mcptest --cov-report=xml --cov-report=term -q
+
+      - name: Upload coverage artefact
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-python
+          path: packages/core/coverage.xml
+          if-no-files-found: ignore
+          retention-days: 14
 
   node:
     name: Node.js (${{ matrix.node-version }})
@@ -89,8 +98,17 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Tests
-        run: pnpm test
+      - name: Tests (with coverage)
+        run: pnpm test:coverage
+
+      - name: Upload coverage artefact
+        if: matrix.node-version == '22'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-node
+          path: packages/sdk-node/coverage/lcov.info
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Build
         run: pnpm build

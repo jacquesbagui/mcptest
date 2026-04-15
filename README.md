@@ -2,6 +2,7 @@
 
 Contract testing for MCP servers.
 
+[![CI](https://github.com/jacquesbagui/mcptest/actions/workflows/ci.yml/badge.svg)](https://github.com/jacquesbagui/mcptest/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/mcptest.svg)](https://pypi.org/project/mcptest/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -176,7 +177,7 @@ contracts/            Example contracts
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome — please open an
-issue before starting non-trivial work.
+issue before starting non-trivial work. Security issues: see [SECURITY.md](SECURITY.md).
 
 ## License
 

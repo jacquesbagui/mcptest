@@ -7,9 +7,10 @@ import time
 from contextlib import AsyncExitStack
 from typing import Any, Literal
 
+import httpx
 from mcp import ClientSession
 from mcp.client.sse import sse_client
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 
 from .base import CallOutcome, ToolInfo
 
@@ -42,14 +43,19 @@ class HttpClient:
         stack = AsyncExitStack()
         try:
             if self._kind == "http":
-                streams = await stack.enter_async_context(
-                    streamablehttp_client(self._url, headers=self._headers)
+                http_client = (
+                    httpx.AsyncClient(headers=self._headers) if self._headers else None
                 )
-                # streamablehttp_client yields (read, write, get_session_id)
+                if http_client is not None:
+                    await stack.enter_async_context(http_client)
+                streams = await stack.enter_async_context(
+                    streamable_http_client(self._url, http_client=http_client)
+                )
+                # streamable_http_client yields (read, write, get_session_id)
                 read, write = streams[0], streams[1]
             else:
                 read, write = await stack.enter_async_context(
-                    sse_client(self._url, headers=self._headers)
+                    sse_client(self._url, headers=self._headers or None)
                 )
             session = await stack.enter_async_context(ClientSession(read, write))
             await session.initialize()

@@ -26,4 +26,17 @@ def boom() -> str:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    import os
+    import sys
+
+    # Usage:
+    #   python toy_server.py                 # stdio (default)
+    #   python toy_server.py http [port]     # streamable HTTP
+    transport = sys.argv[1] if len(sys.argv) > 1 else "stdio"
+    if transport == "http":
+        port = int(sys.argv[2]) if len(sys.argv) > 2 else int(os.environ.get("PORT", "0"))
+        mcp.settings.host = "127.0.0.1"
+        mcp.settings.port = port or 3000
+        mcp.run(transport="streamable-http")
+    else:
+        mcp.run()
