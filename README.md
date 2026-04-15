@@ -1,378 +1,183 @@
 # mcptest
 
-> Contract testing and regression detection for MCP servers.
+Contract testing for MCP servers.
 
-[![PyPI version](https://img.shields.io/pypi/v/mcptest.svg)](https://pypi.org/project/mcptest/)
-[![npm version](https://img.shields.io/npm/v/mcptest.svg)](https://www.npmjs.com/package/mcptest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://github.com/your-username/mcptest/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/mcptest/actions)
+[![PyPI](https://img.shields.io/pypi/v/mcptest.svg)](https://pypi.org/project/mcptest/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
----
-
-## The problem
-
-You build an MCP server. You expose tools. You modify something. **How do you know you didn't break anything?**
-
-Today your only options are:
-- Open Claude Desktop and manually test each tool
-- Click through MCP Inspector one tool at a time
-- Hope your agent doesn't fail in production
-
-There is no automated way to define what your MCP server *should* do and verify it on every commit.
-
-**mcptest fixes that.**
-
----
-
-## What it does
-
-mcptest lets you define a **contract** — a YAML file describing the tools your server must expose, their expected behavior, and performance requirements. Then it runs those assertions against your live server and tells you exactly what passes and what fails.
-
-```bash
-mcptest run --contract contracts/my-server.yaml
-```
-
-```
-✓ search_files        called with {query: "test"} → 200ms   PASS
-✓ read_file           exists, schema valid                   PASS  
-✗ write_file          expected status: success, got: error   FAIL
-  └─ error: permission denied on /tmp/output.txt
-
-3 tools tested · 2 passed · 1 failed
-```
-
-Think of it as **pytest for your MCP server**.
-
----
+You build an MCP server. You change something. How do you know the tools still
+work and the schemas haven't drifted? mcptest gives you a YAML contract, runs
+it against your running server, and fails CI when something breaks.
 
 ## Install
-
-**CLI (Python)**
 
 ```bash
 pip install mcptest
 ```
 
-**SDK (Node.js / TypeScript)**
+Requires Python 3.10+.
 
-```bash
-npm install mcptest
-```
-
----
-
-## Quick start
-
-### 1. Write a contract
+## A minimal contract
 
 ```yaml
 # contracts/my-server.yaml
 server:
-  name: "my-mcp-server"
   transport: stdio
-  command: "python server.py"
+  command: python server.py
 
 tools:
   - name: search_files
-    must_exist: true
-    description_contains: "search"
+    description_contains: search
     input_schema:
-      required:
-        - query
+      required: [query]
       properties:
-        query:
-          type: string
+        query: { type: string }
     assertions:
       - call:
-          args:
-            query: "hello world"
+          args: { query: "hello" }
         expect:
           status: success
           max_latency_ms: 1000
-
-  - name: read_file
-    must_exist: true
-    assertions:
-      - call:
-          args:
-            path: "/tmp/test.txt"
-        expect:
-          status: success
-
-snapshots:
-  enabled: true
-  baseline: ".mcptest/baseline.json"
-  fail_on_regression: true
 ```
 
-### 2. Run the tests
+Run it:
 
 ```bash
 mcptest run --contract contracts/my-server.yaml
 ```
 
-### 3. Capture a baseline snapshot
+```
+search_files
+  ✓ exists
+  ✓ description_contains
+  ✓ input_schema.required
+  ✓ call#1.status [42ms]
+  ✓ call#1.max_latency_ms [42ms]
 
-```bash
-mcptest snapshot --server "python server.py" --out .mcptest/baseline.json
+5 checks · 5 passed · 0 failed
 ```
 
-### 4. Detect regressions
+Exit code is `0` on success, `1` on any failure, `2` on contract errors.
+
+## Detect regressions
+
+Capture the current surface, then compare future runs against it:
 
 ```bash
-mcptest diff --baseline .mcptest/baseline.json --server "python server.py"
+mcptest snapshot --contract contracts/my-server.yaml --out .mcptest/baseline.json
+mcptest diff     --contract contracts/my-server.yaml --baseline .mcptest/baseline.json
 ```
 
 ```
 Snapshot diff:
-  + get_file_info    (new tool added)
-  ✗ search_files     input_schema changed: removed required field "limit"
-  - delete_file      (tool removed — breaking change)
+  + get_file_info          (new tool)
+  - delete_file            (removed — breaking)
+  ✗ search_files
+    └─ required removed: limit
+    └─ type changed on query: 'string' → 'integer'
 ```
 
----
-
-## CLI reference
-
-| Command | Description |
-|---|---|
-| `mcptest run` | Run contract assertions against a server |
-| `mcptest snapshot` | Capture the current state of a server's tools |
-| `mcptest diff` | Compare current server state against a baseline |
-| `mcptest validate` | Check MCP spec conformance without running tests |
-
-**Options**
-
-```bash
-mcptest run --contract <path>       # Contract file to run
-            --server <cmd>          # Override server command
-            --transport <type>      # stdio | http | sse (default: stdio)
-            --reporter <format>     # json | html | junit (default: console)
-            --out <path>            # Output file for report
-            --fail-fast             # Stop on first failure
-```
-
----
+`diff` exits non-zero on breaking changes (removed tools, removed required
+fields, changed property types) so you can wire it into CI.
 
 ## Transports
 
-mcptest supports all three MCP transports:
+```yaml
+server:
+  transport: stdio     # command: python server.py
+  transport: http      # url: http://localhost:3000/mcp
+  transport: sse       # url: http://localhost:3000/sse
+```
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `mcptest run`      | Run a contract against a server |
+| `mcptest snapshot` | Write the server's tool surface to a JSON file |
+| `mcptest diff`     | Compare a live server against a snapshot |
+| `mcptest validate` | Validate a contract file without running it |
+
+Reporters for `run`: `console` (default), `json`, `junit`, `html`. Output goes
+to `--out` when provided, otherwise to stdout.
+
+## GitHub Actions
 
 ```yaml
-# stdio (default)
-server:
-  transport: stdio
-  command: "python server.py"
-
-# HTTP
-server:
-  transport: http
-  url: "http://localhost:3000/mcp"
-
-# SSE
-server:
-  transport: sse
-  url: "http://localhost:3000/sse"
+- run: pip install mcptest
+- run: mcptest run --contract contracts/my-server.yaml --reporter junit --out results.xml
+- uses: mikepenz/action-junit-report@v4
+  if: always()
+  with:
+    report_paths: results.xml
 ```
 
----
+## Python API
 
-## SDK (Node.js / TypeScript)
+```python
+import asyncio
+from mcptest import build_client, load_contract, run_contract
 
-Use mcptest programmatically in your existing test suite:
+async def main() -> None:
+    contract = load_contract("contracts/my-server.yaml")
+    client = build_client(contract.server)
+    await client.connect()
+    try:
+        report = await run_contract(contract, client)
+    finally:
+        await client.close()
+    print(f"{report.passed}/{report.total} passed")
 
-```typescript
-import { McpTest } from 'mcptest';
-
-const tester = new McpTest({
-  transport: 'stdio',
-  command: 'python server.py',
-});
-
-await tester.connect();
-
-// Assert a tool exists
-await tester.assertToolExists('search_files');
-
-// Call a tool and assert the response
-const result = await tester.call('search_files', { query: 'hello' });
-tester.expect(result).toSucceed().withinMs(1000);
-
-// Load and run a full contract
-const report = await tester.runContract('./contracts/my-server.yaml');
-console.log(report.summary());
-
-await tester.disconnect();
+asyncio.run(main())
 ```
-
-Works with **Jest**, **Vitest**, or any Node.js test runner.
-
----
-
-## CI/CD integration
-
-### GitHub Actions
-
-```yaml
-# .github/workflows/mcp-server.yml
-name: Test MCP server
-
-on: [push, pull_request]
-
-jobs:
-  mcptest:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          pip install mcptest
-          pip install -r requirements.txt
-
-      - name: Run contract tests
-        run: mcptest run --contract contracts/my-server.yaml --reporter junit --out results.xml
-
-      - name: Publish test results
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: results.xml
-```
-
-mcptest exits with code `0` on success and `1` on failure — standard CI/CD behavior.
-
----
 
 ## Contract reference
 
-### Tool assertion
-
 ```yaml
+server:
+  transport: stdio | http | sse
+  command: <cmd>           # stdio only
+  args: [<arg>, ...]       # stdio only
+  env: { KEY: value }      # stdio only
+  url: <url>               # http/sse only
+
 tools:
-  - name: my_tool           # Tool name (required)
-    must_exist: true        # Fail if tool is not exposed
-    description_contains:   # Assert description includes this string
-      - "keyword"
-    input_schema:           # Assert input schema shape
-      required:
-        - param1
+  - name: <tool>
+    must_exist: true       # default
+    description_contains: <str> | [<str>, ...]
+    input_schema:
+      required: [<field>, ...]
       properties:
-        param1:
-          type: string
+        <field>: { type: string|integer|... }
     assertions:
       - call:
-          args:             # Arguments to pass
-            param1: "value"
-          timeout_ms: 5000  # Override default timeout
+          args: { ... }
+          timeout_ms: <int>
         expect:
-          status: success   # success | error
-          response_contains: "expected text"
-          max_latency_ms: 2000
-          schema:           # Assert response shape
-            type: object
-            properties:
-              result:
-                type: array
+          status: success | error    # default: success
+          response_contains: <str> | [<str>, ...]
+          max_latency_ms: <int>
+          schema: { ... }            # JSON Schema for the response
 ```
 
-### Snapshots
+## Status
 
-```yaml
-snapshots:
-  enabled: true
-  baseline: ".mcptest/baseline.json"
-  fail_on_regression: true    # Fail CI if tools are removed or schemas change
-  warn_on_addition: false     # Warn (not fail) when new tools are added
-```
+- Python CLI + core: working, unreleased (pre-1.0, API may change)
+- Node.js SDK: planned, see [`packages/sdk-node`](packages/sdk-node)
 
----
-
-## Project structure
+## Repository layout
 
 ```
-mcptest/
-├── packages/
-│   ├── core/                    # Python — core engine
-│   │   ├── mcptest/
-│   │   │   ├── client/          # MCP protocol client (stdio, HTTP, SSE)
-│   │   │   ├── contract/        # YAML parser + assertion engine
-│   │   │   ├── snapshot/        # Capture + diff
-│   │   │   ├── reporter/        # Console, JSON, HTML, JUnit
-│   │   │   └── validator/       # MCP spec conformance
-│   │   └── pyproject.toml
-│   │
-│   └── sdk-node/                # TypeScript SDK
-│       ├── src/
-│       │   ├── McpTest.ts
-│       │   ├── Contract.ts
-│       │   └── types.ts
-│       └── package.json
-│
-├── cli/
-│   └── main.py                  # CLI entry point (Typer)
-│
-├── contracts/
-│   └── example.yaml             # Example contract
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml               # Ready-to-use GitHub Actions workflow
-│
-└── README.md
+packages/core/        Python engine + CLI
+packages/sdk-node/    TypeScript SDK (planned)
+contracts/            Example contracts
 ```
-
----
-
-## Comparison
-
-| | MCP Inspector | Claude Desktop | mcptest |
-|---|---|---|---|
-| Automated | ✗ | ✗ | ✓ |
-| CI/CD ready | ✗ | ✗ | ✓ |
-| Contract file | ✗ | ✗ | ✓ |
-| Regression detection | ✗ | ✗ | ✓ |
-| All transports | ✓ | ✓ | ✓ |
-| No LLM required | ✓ | ✗ | ✓ |
-
----
-
-## Roadmap
-
-- [ ] Core Python engine + CLI
-- [ ] Node.js SDK
-- [ ] stdio transport
-- [ ] HTTP + SSE transport
-- [ ] Snapshot + diff
-- [ ] JUnit / HTML reporter
-- [ ] GitHub Actions example
-- [ ] VS Code extension (test runner integration)
-- [ ] Watch mode (`mcptest watch`)
-
----
 
 ## Contributing
 
-Contributions are welcome. Please open an issue before submitting a large PR.
-
-```bash
-git clone https://github.com/your-username/mcptest
-cd mcptest
-pip install -e "packages/core[dev]"
-cd packages/sdk-node && npm install
-```
-
----
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome — please open an
+issue before starting non-trivial work.
 
 ## License
 
-MIT © [Your Name](https://github.com/your-username)
-
----
-
-*Built for the MCP community. If mcptest saves you time, a ⭐ on GitHub is appreciated.*
+[MIT](LICENSE)
