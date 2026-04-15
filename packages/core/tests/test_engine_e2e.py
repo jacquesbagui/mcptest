@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from mcpcheck.client import build_client
-from mcpcheck.contract import load_contract
-from mcpcheck.contract.engine import run_contract
+from mymcp.client import build_client
+from mymcp.contract import load_contract
+from mymcp.contract.engine import run_contract
 
 REPO = Path(__file__).resolve().parents[3]
 TOY_SERVER = REPO / "packages/core/examples/toy_server.py"

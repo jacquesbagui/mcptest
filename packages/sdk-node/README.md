@@ -1,6 +1,6 @@
-# mcpcheck (Node.js SDK)
+# mymcp (Node.js SDK)
 
-TypeScript SDK for [mcpcheck](https://github.com/jacquesbagui/mcpcheck) — contract
+TypeScript SDK for [mymcp](https://github.com/jacquesbagui/mymcp) — contract
 testing for MCP servers, usable from any Node test runner.
 
 > Pre-release. Not yet published to npm. Build locally with `pnpm build` to try it.
@@ -8,7 +8,7 @@ testing for MCP servers, usable from any Node test runner.
 ## Install
 
 ```bash
-npm install mcpcheck
+npm install mymcp
 ```
 
 Requires Node.js 20+.
@@ -16,7 +16,7 @@ Requires Node.js 20+.
 ## Fluent API
 
 ```ts
-import { McpTest } from "mcpcheck";
+import { McpTest } from "mymcp";
 
 const t = new McpTest({ transport: "stdio", command: "python server.py" });
 await t.connect();
@@ -38,7 +38,7 @@ The contract format is identical to the Python core. The same file runs in
 either language.
 
 ```ts
-import { McpTest } from "mcpcheck";
+import { McpTest } from "mymcp";
 
 const t = new McpTest({ transport: "stdio", command: "python server.py" });
 await t.connect();
@@ -54,7 +54,7 @@ if (!report.ok) process.exit(1);
 If you don't want the fluent wrapper:
 
 ```ts
-import { buildClient, loadContract, runContract } from "mcpcheck";
+import { buildClient, loadContract, runContract } from "mymcp";
 
 const contract = loadContract("./contracts/my-server.yaml");
 const client = buildClient(contract.server);

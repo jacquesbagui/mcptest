@@ -1,7 +1,7 @@
 import pytest
 
-from mcpcheck.contract import ContractError, load_contract
-from mcpcheck.contract.models import Contract, ServerConfig
+from mymcp.contract import ContractError, load_contract
+from mymcp.contract.models import Contract, ServerConfig
 
 
 def test_server_config_requires_command_for_stdio() -> None:

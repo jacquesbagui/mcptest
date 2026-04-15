@@ -26,7 +26,7 @@ from mcp.server.fastmcp import FastMCP
 
 
 def _notes_dir() -> Path:
-    base = Path(os.environ.get("NOTES_DIR", "")) or Path.home() / ".mcpcheck-notes"
+    base = Path(os.environ.get("NOTES_DIR", "")) or Path.home() / ".mymcp-notes"
     base.mkdir(parents=True, exist_ok=True)
     return base
 

@@ -80,7 +80,7 @@ export type ToolSpec = z.infer<typeof ToolSpecSchema>;
 export const SnapshotConfigSchema = z
   .object({
     enabled: z.boolean().default(false),
-    baseline: z.string().default(".mcpcheck/baseline.json"),
+    baseline: z.string().default(".mymcp/baseline.json"),
     fail_on_regression: z.boolean().default(true),
     warn_on_addition: z.boolean().default(false),
   })

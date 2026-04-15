@@ -1,5 +1,5 @@
-from mcpcheck.snapshot import Snapshot, diff_snapshots
-from mcpcheck.snapshot.capture import SNAPSHOT_VERSION
+from mymcp.snapshot import Snapshot, diff_snapshots
+from mymcp.snapshot.capture import SNAPSHOT_VERSION
 
 
 def _snap(tools: dict) -> Snapshot:

@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases for each package are tagged with a prefix:
 
-- `core-vX.Y.Z` — Python package (`mcpcheck` on PyPI)
-- `sdk-vX.Y.Z`  — Node.js package (`mcpcheck` on npm)
+- `core-vX.Y.Z` — Python package (`mymcp` on PyPI)
+- `sdk-vX.Y.Z`  — Node.js package (`mymcp` on npm)
 
 ## [Unreleased]
 
@@ -21,7 +21,7 @@ Releases for each package are tagged with a prefix:
     latency, response substrings, JSON Schema validation.
   - Snapshot capture and diff with breaking-change detection.
   - Reporters: console, JSON, JUnit XML, standalone HTML.
-  - CLI (`mcpcheck run|snapshot|diff|validate`).
+  - CLI (`mymcp run|snapshot|diff|validate`).
 - Node.js SDK (`packages/sdk-node`):
   - Zod contract schemas in parity with the Python models.
   - stdio client built on `@modelcontextprotocol/sdk`.
@@ -33,6 +33,6 @@ Releases for each package are tagged with a prefix:
 - Coverage reporting (`pytest-cov` for Python, `@vitest/coverage-v8` for Node)
   uploaded as CI artefacts.
 - Security policy (`SECURITY.md`) and Dependabot configuration.
-- `mcpcheck watch` — re-run the contract on contract/extra-path changes.
+- `mymcp watch` — re-run the contract on contract/extra-path changes.
 - Realistic example: notes MCP server (`packages/core/examples/notes_server.py`)
   and matching `contracts/notes.yaml`.

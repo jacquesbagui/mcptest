@@ -1,6 +1,6 @@
-# mcpcheck (Python core)
+# mymcp (Python core)
 
-The Python engine and CLI that powers [mcpcheck](https://github.com/jacquesbagui/mcpcheck) —
+The Python engine and CLI that powers [mymcp](https://github.com/jacquesbagui/mymcp) —
 contract testing and regression detection for MCP servers.
 
 See the [repository README](../../README.md) for the overall project description
@@ -10,7 +10,7 @@ the Python package only.
 ## Install
 
 ```bash
-pip install mcpcheck
+pip install mymcp
 ```
 
 ## Development
@@ -34,10 +34,10 @@ packages/core/.venv/bin/pytest -q
 ## CLI
 
 ```bash
-mcpcheck run       --contract contracts/example.yaml
-mcpcheck snapshot  --contract contracts/example.yaml --out .mcpcheck/baseline.json
-mcpcheck diff      --contract contracts/example.yaml --baseline .mcpcheck/baseline.json
-mcpcheck validate  --contract contracts/example.yaml
+mymcp run       --contract contracts/example.yaml
+mymcp snapshot  --contract contracts/example.yaml --out .mymcp/baseline.json
+mymcp diff      --contract contracts/example.yaml --baseline .mymcp/baseline.json
+mymcp validate  --contract contracts/example.yaml
 ```
 
 Supported reporters for `run`: `console` (default), `json`, `junit`, `html`.
@@ -48,7 +48,7 @@ errors.
 
 ```python
 import asyncio
-from mcpcheck import load_contract, build_client, run_contract
+from mymcp import load_contract, build_client, run_contract
 
 async def main() -> None:
     contract = load_contract("contracts/example.yaml")
@@ -66,7 +66,7 @@ asyncio.run(main())
 ## Package layout
 
 ```
-src/mcpcheck/
+src/mymcp/
 ├── cli.py                 # Typer CLI entry point
 ├── client/                # Transport clients (stdio, http, sse)
 ├── contract/              # YAML models (Pydantic) + loader + assertion engine
