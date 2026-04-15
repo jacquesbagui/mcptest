@@ -134,6 +134,52 @@ def diff_cmd(
     raise typer.Exit(code=1 if fail_on_breaking and diff.has_breaking else 0)
 
 
+# ---------- watch ----------
+
+@app.command("watch")
+def watch_cmd(
+    contract: Annotated[Path, typer.Option("--contract", "-c", help="Contract YAML file.")],
+    watch_path: Annotated[
+        list[Path] | None,
+        typer.Option(
+            "--watch",
+            "-w",
+            help="Extra file/directory to watch. Repeat for multiple paths.",
+        ),
+    ] = None,
+    fail_fast: Annotated[bool, typer.Option("--fail-fast", help="Stop on first failure.")] = False,
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Forward server stderr.")
+    ] = False,
+) -> None:
+    """Re-run the contract on file changes. Exits on Ctrl-C."""
+    from watchfiles import watch as _watch
+
+    contract_path = contract.resolve()
+    extras = watch_path or []
+    paths = [contract_path, *[p.resolve() for p in extras]]
+    console = Console()
+
+    def _once() -> None:
+        try:
+            obj = load_contract(contract_path)
+        except ContractError as e:
+            err_console.print(f"[red]Contract error:[/red] {e}")
+            return
+        report = asyncio.run(_run(obj, fail_fast=fail_fast, verbose=verbose))
+        ConsoleReporter(console).render(report)
+        console.print()
+
+    console.print(f"[dim]watching {len(paths)} path(s); Ctrl-C to stop[/dim]")
+    _once()
+    try:
+        for _ in _watch(*[str(p) for p in paths]):
+            console.rule("[dim]change detected[/dim]")
+            _once()
+    except KeyboardInterrupt as e:
+        raise typer.Exit(code=0) from e
+
+
 # ---------- validate ----------
 
 @app.command("validate")

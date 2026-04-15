@@ -1,0 +1,85 @@
+# Example contract: a notes MCP server.
+#
+# Run:
+#   NOTES_DIR=/tmp/mcptest-notes-demo mcptest run --contract contracts/notes.yaml
+#
+# (Seed a few *.md files in NOTES_DIR first if you want search assertions to
+# match real content.)
+
+server:
+  name: notes
+  transport: stdio
+  command: python packages/core/examples/notes_server.py
+  env:
+    NOTES_DIR: /tmp/mcptest-notes-demo
+
+tools:
+  - name: list_notes
+    description_contains: List
+    input_schema:
+      required: []
+      properties: {}
+    assertions:
+      - call:
+          args: {}
+        expect:
+          status: success
+          max_latency_ms: 500
+
+  - name: search_notes
+    description_contains: search
+    input_schema:
+      required: [query]
+      properties:
+        query:
+          type: string
+    assertions:
+      - call:
+          args:
+            query: "nothing-will-match-xyz-42"
+        expect:
+          status: success
+          max_latency_ms: 500
+
+  - name: read_note
+    description_contains: body
+    input_schema:
+      required: [id]
+      properties:
+        id:
+          type: string
+    assertions:
+      - call:
+          args:
+            id: "does-not-exist"
+        expect:
+          status: error
+
+  - name: create_note
+    must_exist: true
+    input_schema:
+      required: [title]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+    assertions:
+      - call:
+          args:
+            title: ""
+            body: ""
+        expect:
+          status: error
+      - call:
+          args:
+            title: "smoke test note"
+            body: "created by mcptest"
+        expect:
+          status: success
+          response_contains: "smoke-test-note"
+
+snapshots:
+  enabled: true
+  baseline: .mcptest/notes-baseline.json
+  fail_on_regression: true

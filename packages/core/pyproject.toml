@@ -29,6 +29,7 @@ dependencies = [
     "rich>=13.7",
     "jsonschema>=4.21",
     "httpx>=0.27",
+    "watchfiles>=0.22",
 ]
 
 [project.optional-dependencies]

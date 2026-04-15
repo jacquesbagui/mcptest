@@ -95,12 +95,18 @@ server:
 | Command | Purpose |
 |---|---|
 | `mcptest run`      | Run a contract against a server |
+| `mcptest watch`    | Re-run the contract on file changes |
 | `mcptest snapshot` | Write the server's tool surface to a JSON file |
 | `mcptest diff`     | Compare a live server against a snapshot |
 | `mcptest validate` | Validate a contract file without running it |
 
 Reporters for `run`: `console` (default), `json`, `junit`, `html`. Output goes
 to `--out` when provided, otherwise to stdout.
+
+For a realistic example, see
+[`packages/core/examples/notes_server.py`](packages/core/examples/notes_server.py)
+and the matching contract [`contracts/notes.yaml`](contracts/notes.yaml) — a
+tiny notes MCP server exercising `list`, `read`, `search`, and `create` tools.
 
 ## GitHub Actions
 

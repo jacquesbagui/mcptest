@@ -30,3 +30,9 @@ Releases for each package are tagged with a prefix:
     `expect(...).toSucceed().toContain().withinMs()`, `runContract()`).
 - CI pipeline for both packages; publish workflows (PyPI trusted publishing,
   npm with provenance) triggered by prefixed tags.
+- Coverage reporting (`pytest-cov` for Python, `@vitest/coverage-v8` for Node)
+  uploaded as CI artefacts.
+- Security policy (`SECURITY.md`) and Dependabot configuration.
+- `mcptest watch` — re-run the contract on contract/extra-path changes.
+- Realistic example: notes MCP server (`packages/core/examples/notes_server.py`)
+  and matching `contracts/notes.yaml`.
