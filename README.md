@@ -1,19 +1,19 @@
-# mcptest
+# mcpcheck
 
 Contract testing for MCP servers.
 
-[![CI](https://github.com/jacquesbagui/mcptest/actions/workflows/ci.yml/badge.svg)](https://github.com/jacquesbagui/mcptest/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/mcptest.svg)](https://pypi.org/project/mcptest/)
+[![CI](https://github.com/jacquesbagui/mcpcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/jacquesbagui/mcpcheck/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/mcpcheck.svg)](https://pypi.org/project/mcpcheck/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 You build an MCP server. You change something. How do you know the tools still
-work and the schemas haven't drifted? mcptest gives you a YAML contract, runs
+work and the schemas haven't drifted? mcpcheck gives you a YAML contract, runs
 it against your running server, and fails CI when something breaks.
 
 ## Install
 
 ```bash
-pip install mcptest
+pip install mcpcheck
 ```
 
 Requires Python 3.10+.
@@ -44,7 +44,7 @@ tools:
 Run it:
 
 ```bash
-mcptest run --contract contracts/my-server.yaml
+mcpcheck run --contract contracts/my-server.yaml
 ```
 
 ```
@@ -65,8 +65,8 @@ Exit code is `0` on success, `1` on any failure, `2` on contract errors.
 Capture the current surface, then compare future runs against it:
 
 ```bash
-mcptest snapshot --contract contracts/my-server.yaml --out .mcptest/baseline.json
-mcptest diff     --contract contracts/my-server.yaml --baseline .mcptest/baseline.json
+mcpcheck snapshot --contract contracts/my-server.yaml --out .mcpcheck/baseline.json
+mcpcheck diff     --contract contracts/my-server.yaml --baseline .mcpcheck/baseline.json
 ```
 
 ```
@@ -94,11 +94,11 @@ server:
 
 | Command | Purpose |
 |---|---|
-| `mcptest run`      | Run a contract against a server |
-| `mcptest watch`    | Re-run the contract on file changes |
-| `mcptest snapshot` | Write the server's tool surface to a JSON file |
-| `mcptest diff`     | Compare a live server against a snapshot |
-| `mcptest validate` | Validate a contract file without running it |
+| `mcpcheck run`      | Run a contract against a server |
+| `mcpcheck watch`    | Re-run the contract on file changes |
+| `mcpcheck snapshot` | Write the server's tool surface to a JSON file |
+| `mcpcheck diff`     | Compare a live server against a snapshot |
+| `mcpcheck validate` | Validate a contract file without running it |
 
 Reporters for `run`: `console` (default), `json`, `junit`, `html`. Output goes
 to `--out` when provided, otherwise to stdout.
@@ -111,8 +111,8 @@ tiny notes MCP server exercising `list`, `read`, `search`, and `create` tools.
 ## GitHub Actions
 
 ```yaml
-- run: pip install mcptest
-- run: mcptest run --contract contracts/my-server.yaml --reporter junit --out results.xml
+- run: pip install mcpcheck
+- run: mcpcheck run --contract contracts/my-server.yaml --reporter junit --out results.xml
 - uses: mikepenz/action-junit-report@v4
   if: always()
   with:
@@ -123,7 +123,7 @@ tiny notes MCP server exercising `list`, `read`, `search`, and `create` tools.
 
 ```python
 import asyncio
-from mcptest import build_client, load_contract, run_contract
+from mcpcheck import build_client, load_contract, run_contract
 
 async def main() -> None:
     contract = load_contract("contracts/my-server.yaml")

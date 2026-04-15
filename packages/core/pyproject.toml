@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mcptest"
+name = "mcpcheck"
 version = "0.1.0"
 description = "Contract testing and regression detection for MCP servers."
 readme = "../../README.md"
@@ -44,15 +44,15 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jacquesbagui/mcptest"
-Issues = "https://github.com/jacquesbagui/mcptest/issues"
-Repository = "https://github.com/jacquesbagui/mcptest"
+Homepage = "https://github.com/jacquesbagui/mcpcheck"
+Issues = "https://github.com/jacquesbagui/mcpcheck/issues"
+Repository = "https://github.com/jacquesbagui/mcpcheck"
 
 [project.scripts]
-mcptest = "mcptest.cli:app"
+mcpcheck = "mcpcheck.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mcptest"]
+packages = ["src/mcpcheck"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -60,7 +60,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["mcptest"]
+source = ["mcpcheck"]
 
 [tool.coverage.report]
 show_missing = true

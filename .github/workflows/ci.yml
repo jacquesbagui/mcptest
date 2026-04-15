@@ -44,7 +44,7 @@ jobs:
         run: .venv/bin/mypy src
 
       - name: Pytest (with coverage)
-        run: .venv/bin/pytest --cov=mcptest --cov-report=xml --cov-report=term -q
+        run: .venv/bin/pytest --cov=mcpcheck --cov-report=xml --cov-report=term -q
 
       - name: Upload coverage artefact
         if: matrix.python-version == '3.12'

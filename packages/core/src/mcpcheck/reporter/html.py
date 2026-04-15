@@ -23,7 +23,7 @@ h1 { margin: 0 0 .25rem; }
 
 
 class HtmlReporter:
-    def render(self, report: Report, out: Path | None = None, title: str = "mcptest report") -> str:
+    def render(self, report: Report, out: Path | None = None, title: str = "mcpcheck report") -> str:
         rows: list[str] = []
         grouped: dict[str, list[CheckResult]] = {}
         for c in report.checks:
