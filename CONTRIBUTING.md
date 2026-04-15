@@ -33,6 +33,15 @@ From `packages/core`:
 .venv/bin/pytest -q
 ```
 
+**If you edited the root `README.md`**, mirror it so the Python package ships
+the same text on PyPI:
+
+```bash
+cp README.md packages/core/README.md
+```
+
+CI fails the PR if these two files differ.
+
 All three must pass. New features must come with tests.
 
 ## Commit style

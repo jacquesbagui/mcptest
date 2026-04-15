@@ -169,14 +169,14 @@ tools:
 
 ## Status
 
-- Python CLI + core: working, unreleased (pre-1.0, API may change)
-- Node.js SDK: planned, see [`packages/sdk-node`](packages/sdk-node)
+Pre-1.0. Both packages are functional and tested against a real MCP server.
+API may still change before 1.0.
 
 ## Repository layout
 
 ```
 packages/core/        Python engine + CLI
-packages/sdk-node/    TypeScript SDK (planned)
+packages/sdk-node/    TypeScript SDK
 contracts/            Example contracts
 ```
 
