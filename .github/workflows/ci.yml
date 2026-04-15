@@ -63,7 +63,7 @@ jobs:
 
       - name: Upload coverage artefact
         if: matrix.python-version == '3.12'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-python
           path: packages/core/coverage.xml
@@ -121,7 +121,7 @@ jobs:
 
       - name: Upload coverage artefact
         if: matrix.node-version == '22'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-node
           path: packages/sdk-node/coverage/lcov.info
