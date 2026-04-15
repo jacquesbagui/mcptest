@@ -12,8 +12,14 @@ from ..report import CheckResult, CheckStatus, Report
 from .models import Assertion, Contract, Expectation, InputSchemaAssertion, ToolSpec
 
 
-async def run_contract(contract: Contract, client: McpClient) -> Report:
-    """Execute every check the contract declares and return a Report."""
+async def run_contract(
+    contract: Contract, client: McpClient, *, fail_fast: bool = False
+) -> Report:
+    """Execute every check the contract declares and return a Report.
+
+    When `fail_fast` is True, stop as soon as any check fails. Skipped tools
+    do not count as failures.
+    """
     report = Report()
     tools = await client.list_tools()
     by_name = {t.name: t for t in tools}
@@ -25,6 +31,8 @@ async def run_contract(contract: Contract, client: McpClient) -> Report:
                 report.add(
                     CheckResult(spec.name, "exists", CheckStatus.FAIL, "tool not exposed by server")
                 )
+                if fail_fast:
+                    return report
             else:
                 report.add(CheckResult(spec.name, "exists", CheckStatus.SKIP, "optional tool absent"))
             continue
@@ -32,9 +40,13 @@ async def run_contract(contract: Contract, client: McpClient) -> Report:
 
         _check_description(spec, tool, report)
         _check_input_schema(spec, tool, report)
+        if fail_fast and report.failed:
+            return report
 
         for idx, assertion in enumerate(spec.assertions, start=1):
             await _run_assertion(spec.name, idx, assertion, client, report)
+            if fail_fast and report.failed:
+                return report
 
     return report
 

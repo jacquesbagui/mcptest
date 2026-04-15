@@ -13,6 +13,7 @@ from rich.console import Console
 from . import __version__
 from .client import build_client
 from .client.base import McpClient
+from .client.stdio import StdioClient
 from .contract import ContractError, load_contract
 from .contract.engine import run_contract
 from .contract.models import Contract, ServerConfig, Transport
@@ -57,10 +58,14 @@ def run_cmd(
         str, typer.Option("--reporter", help="console | json | junit | html")
     ] = "console",
     out: Annotated[Path | None, typer.Option("--out", help="Write report to file.")] = None,
+    fail_fast: Annotated[bool, typer.Option("--fail-fast", help="Stop on first failure.")] = False,
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Forward server stderr to this terminal.")
+    ] = False,
 ) -> None:
     """Run contract assertions against an MCP server."""
     contract_obj = _load_or_exit(contract)
-    report = asyncio.run(_run(contract_obj))
+    report = asyncio.run(_run(contract_obj, fail_fast=fail_fast, verbose=verbose))
     _emit_report(report, reporter, out)
     raise typer.Exit(code=0 if report.ok else 1)
 
@@ -168,17 +173,31 @@ def _resolve_server(
     return ServerConfig(transport=t, url=server)
 
 
-async def _run(contract_obj: Contract) -> Report:
-    client = build_client(contract_obj.server)
+async def _run(contract_obj: Contract, *, fail_fast: bool = False, verbose: bool = False) -> Report:
+    client = build_client(contract_obj.server, verbose=verbose)
     try:
-        await client.connect()
-        return await run_contract(contract_obj, client)
+        try:
+            await client.connect()
+        except Exception as e:
+            _dump_captured_stderr(client, context="connection")
+            err_console.print(f"[red]Failed to connect to server:[/red] {e}")
+            raise typer.Exit(code=1) from e
+        return await run_contract(contract_obj, client, fail_fast=fail_fast)
     finally:
         await client.close()
 
 
+def _dump_captured_stderr(client: McpClient, *, context: str) -> None:
+    if isinstance(client, StdioClient):
+        captured = client.captured_stderr
+        if captured.strip():
+            err_console.print(f"[yellow]--- server stderr (during {context}) ---[/yellow]")
+            err_console.print(captured.rstrip())
+            err_console.print("[yellow]--- end stderr ---[/yellow]")
+
+
 async def _with_client(config: ServerConfig, fn):  # type: ignore[no-untyped-def]
-    client: McpClient = build_client(config)
+    client: McpClient = build_client(config, verbose=False)
     try:
         await client.connect()
         return await fn(client)

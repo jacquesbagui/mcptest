@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import os
 import shlex
+import sys
 import time
 from contextlib import AsyncExitStack
-from typing import Any
+from typing import Any, TextIO
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -29,7 +31,9 @@ class StdioClient:
         *,
         env: dict[str, str] | None = None,
         cwd: str | None = None,
+        errlog: TextIO | None = None,
     ) -> None:
+        """If `errlog` is None, the child's stderr is forwarded to ours."""
         if args is None:
             parts = shlex.split(command)
             if not parts:
@@ -39,8 +43,22 @@ class StdioClient:
         self._args = args
         self._env = {**os.environ, **(env or {})} if env else None
         self._cwd = cwd
+        self._errlog: TextIO = errlog if errlog is not None else sys.stderr
         self._stack: AsyncExitStack | None = None
         self._session: ClientSession | None = None
+
+    @property
+    def captured_stderr(self) -> str:
+        """Return stderr collected so far if a seekable sink was provided, else ''."""
+        buf = self._errlog
+        if buf is sys.stderr:
+            return ""
+        try:
+            buf.flush()
+            buf.seek(0)
+            return buf.read()
+        except (OSError, io.UnsupportedOperation, ValueError):
+            return ""
 
     async def connect(self) -> None:
         if self._session is not None:
@@ -50,7 +68,7 @@ class StdioClient:
             params = StdioServerParameters(
                 command=self._command, args=self._args, env=self._env, cwd=self._cwd
             )
-            read, write = await stack.enter_async_context(stdio_client(params))
+            read, write = await stack.enter_async_context(stdio_client(params, errlog=self._errlog))
             session = await stack.enter_async_context(ClientSession(read, write))
             await session.initialize()
         except Exception:
