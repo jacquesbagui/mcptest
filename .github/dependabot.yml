@@ -10,6 +10,10 @@ updates:
     commit-message:
       prefix: "chore(core)"
       include: "scope"
+    # Major bumps on runtime deps get handled manually (breaking changes).
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
         dependency-type: "development"
@@ -24,6 +28,10 @@ updates:
     commit-message:
       prefix: "chore(sdk-node)"
       include: "scope"
+    # Same policy for npm: no major auto-bumps.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
         dependency-type: "development"
