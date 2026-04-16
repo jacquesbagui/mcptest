@@ -5,7 +5,7 @@ from .contract import Contract, ContractError, load_contract
 from .contract.engine import run_contract
 from .report import CheckResult, CheckStatus, Report
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "CheckResult",
