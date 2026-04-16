@@ -98,7 +98,7 @@ async def test_http_transport_lists_tools_and_calls() -> None:
             await client.close()
 
         assert report.failed == 0, [
-            (c.tool, c.check, c.message) for c in report.checks if c.status.value == "fail"
+            (c.subject, c.check, c.message) for c in report.checks if c.status.value == "fail"
         ]
         assert report.passed > 0
     finally:

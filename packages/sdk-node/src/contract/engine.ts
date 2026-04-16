@@ -25,14 +25,14 @@ export async function runContract(contract: Contract, client: McpClient): Promis
     if (!tool) {
       if (spec.must_exist) {
         report.add({
-          tool: spec.name,
+          subject: spec.name,
           check: "exists",
           status: "fail",
           message: "tool not exposed by server",
         });
       } else {
         report.add({
-          tool: spec.name,
+          subject: spec.name,
           check: "exists",
           status: "skip",
           message: "optional tool absent",
@@ -40,7 +40,7 @@ export async function runContract(contract: Contract, client: McpClient): Promis
       }
       continue;
     }
-    report.add({ tool: spec.name, check: "exists", status: "pass" });
+    report.add({ subject: spec.name, check: "exists", status: "pass" });
 
     checkDescription(spec, tool, report);
     checkInputSchema(spec, tool, report);
@@ -91,13 +91,13 @@ async function checkResourceByUri(
   const found = resources.some((r) => r.uri === uri);
   if (!found) {
     if (spec.must_exist) {
-      report.add({ tool: subject, check: "exists", status: "fail", message: "resource not listed" });
+      report.add({ subject: subject, check: "exists", status: "fail", message: "resource not listed" });
     } else {
-      report.add({ tool: subject, check: "exists", status: "skip", message: "optional resource absent" });
+      report.add({ subject: subject, check: "exists", status: "skip", message: "optional resource absent" });
     }
     return;
   }
-  report.add({ tool: subject, check: "exists", status: "pass" });
+  report.add({ subject: subject, check: "exists", status: "pass" });
 
   if (spec.content_contains !== undefined || spec.content_schema !== undefined) {
     let text: string;
@@ -105,7 +105,7 @@ async function checkResourceByUri(
       const content = await client.readResource(uri);
       text = content.text;
     } catch (e) {
-      report.add({ tool: subject, check: "read", status: "fail", message: `read failed: ${e instanceof Error ? e.message : String(e)}` });
+      report.add({ subject: subject, check: "read", status: "fail", message: `read failed: ${e instanceof Error ? e.message : String(e)}` });
       return;
     }
     checkResourceContent(subject, spec, text, report);
@@ -123,19 +123,19 @@ function checkResourceByPattern(
   try {
     re = new RegExp(pat);
   } catch (e) {
-    report.add({ tool: subject, check: "pattern", status: "fail", message: `invalid regex: ${e instanceof Error ? e.message : String(e)}` });
+    report.add({ subject: subject, check: "pattern", status: "fail", message: `invalid regex: ${e instanceof Error ? e.message : String(e)}` });
     return;
   }
   const matched = resources.filter((r) => re.test(r.uri));
   if (spec.min_count !== undefined) {
     if (matched.length < spec.min_count) {
-      report.add({ tool: subject, check: "min_count", status: "fail", message: `matched ${matched.length}, expected >= ${spec.min_count}` });
+      report.add({ subject: subject, check: "min_count", status: "fail", message: `matched ${matched.length}, expected >= ${spec.min_count}` });
     } else {
-      report.add({ tool: subject, check: "min_count", status: "pass" });
+      report.add({ subject: subject, check: "min_count", status: "pass" });
     }
   }
   if (matched.length === 0 && spec.must_exist) {
-    report.add({ tool: subject, check: "exists", status: "fail", message: "no resources match pattern" });
+    report.add({ subject: subject, check: "exists", status: "fail", message: "no resources match pattern" });
   }
 }
 
@@ -144,9 +144,9 @@ function checkResourceContent(subject: string, spec: ResourceSpec, text: string,
     const needles = typeof spec.content_contains === "string" ? [spec.content_contains] : spec.content_contains;
     const missing = needles.filter((n) => !text.includes(n));
     if (missing.length > 0) {
-      report.add({ tool: subject, check: "content_contains", status: "fail", message: `missing: ${JSON.stringify(missing)}` });
+      report.add({ subject: subject, check: "content_contains", status: "fail", message: `missing: ${JSON.stringify(missing)}` });
     } else {
-      report.add({ tool: subject, check: "content_contains", status: "pass" });
+      report.add({ subject: subject, check: "content_contains", status: "pass" });
     }
   }
   if (spec.content_schema !== undefined) {
@@ -154,15 +154,15 @@ function checkResourceContent(subject: string, spec: ResourceSpec, text: string,
     try {
       payload = JSON.parse(text);
     } catch {
-      report.add({ tool: subject, check: "content_schema", status: "fail", message: "content is not valid JSON" });
+      report.add({ subject: subject, check: "content_schema", status: "fail", message: "content is not valid JSON" });
       return;
     }
     const validate = ajv.compile(spec.content_schema);
     if (validate(payload)) {
-      report.add({ tool: subject, check: "content_schema", status: "pass" });
+      report.add({ subject: subject, check: "content_schema", status: "pass" });
     } else {
       const first = (validate.errors ?? [])[0];
-      report.add({ tool: subject, check: "content_schema", status: "fail", message: `schema mismatch: ${first?.message ?? "unknown"}` });
+      report.add({ subject: subject, check: "content_schema", status: "fail", message: `schema mismatch: ${first?.message ?? "unknown"}` });
     }
   }
 }
@@ -182,22 +182,22 @@ async function runPrompts(
     const prompt = byName.get(spec.name);
     if (!prompt) {
       if (spec.must_exist) {
-        report.add({ tool: subject, check: "exists", status: "fail", message: "prompt not listed" });
+        report.add({ subject: subject, check: "exists", status: "fail", message: "prompt not listed" });
       } else {
-        report.add({ tool: subject, check: "exists", status: "skip" });
+        report.add({ subject: subject, check: "exists", status: "skip" });
       }
       continue;
     }
-    report.add({ tool: subject, check: "exists", status: "pass" });
+    report.add({ subject: subject, check: "exists", status: "pass" });
 
     if (spec.description_contains !== undefined) {
       const needles = typeof spec.description_contains === "string" ? [spec.description_contains] : spec.description_contains;
       const desc = prompt.description ?? "";
       const missing = needles.filter((n) => !desc.includes(n));
       if (missing.length > 0) {
-        report.add({ tool: subject, check: "description_contains", status: "fail", message: `description missing: ${JSON.stringify(missing)}` });
+        report.add({ subject: subject, check: "description_contains", status: "fail", message: `description missing: ${JSON.stringify(missing)}` });
       } else {
-        report.add({ tool: subject, check: "description_contains", status: "pass" });
+        report.add({ subject: subject, check: "description_contains", status: "pass" });
       }
     }
 
@@ -206,15 +206,15 @@ async function runPrompts(
       for (const as of spec.arguments) {
         const check = `arg:${as.name}`;
         if (!names.has(as.name)) {
-          report.add({ tool: subject, check, status: "fail", message: "argument not declared" });
+          report.add({ subject: subject, check, status: "fail", message: "argument not declared" });
         } else {
-          report.add({ tool: subject, check, status: "pass" });
+          report.add({ subject: subject, check, status: "pass" });
           if (as.required) {
             const actual = prompt.arguments.find((a) => a.name === as.name);
             if (!actual?.required) {
-              report.add({ tool: subject, check: `${check}.required`, status: "fail", message: "expected required" });
+              report.add({ subject: subject, check: `${check}.required`, status: "fail", message: "expected required" });
             } else {
-              report.add({ tool: subject, check: `${check}.required`, status: "pass" });
+              report.add({ subject: subject, check: `${check}.required`, status: "pass" });
             }
           }
         }
@@ -242,16 +242,16 @@ async function runPromptAssertion(
   try {
     result = await client.getPrompt(promptName, pa.get_prompt.args);
   } catch (e) {
-    report.add({ tool: subject, check: label, status: "fail", message: `get_prompt error: ${e instanceof Error ? e.message : String(e)}` });
+    report.add({ subject: subject, check: label, status: "fail", message: `get_prompt error: ${e instanceof Error ? e.message : String(e)}` });
     return;
   }
 
   const expect = pa.expect;
   if (expect.message_count !== undefined) {
     if (result.messages.length !== expect.message_count) {
-      report.add({ tool: subject, check: `${label}.message_count`, status: "fail", message: `expected ${expect.message_count}, got ${result.messages.length}` });
+      report.add({ subject: subject, check: `${label}.message_count`, status: "fail", message: `expected ${expect.message_count}, got ${result.messages.length}` });
     } else {
-      report.add({ tool: subject, check: `${label}.message_count`, status: "pass" });
+      report.add({ subject: subject, check: `${label}.message_count`, status: "pass" });
     }
   }
 
@@ -260,9 +260,9 @@ async function runPromptAssertion(
     const allText = result.messages.map((m) => m.text).join(" ");
     const missing = needles.filter((n) => !allText.includes(n));
     if (missing.length > 0) {
-      report.add({ tool: subject, check: `${label}.messages_contain`, status: "fail", message: `missing: ${JSON.stringify(missing)}` });
+      report.add({ subject: subject, check: `${label}.messages_contain`, status: "fail", message: `missing: ${JSON.stringify(missing)}` });
     } else {
-      report.add({ tool: subject, check: `${label}.messages_contain`, status: "pass" });
+      report.add({ subject: subject, check: `${label}.messages_contain`, status: "pass" });
     }
   }
 
@@ -270,10 +270,10 @@ async function runPromptAssertion(
     const payload = result.messages.map((m) => ({ role: m.role, text: m.text }));
     const validate = ajv.compile(expect.messages_schema);
     if (validate(payload)) {
-      report.add({ tool: subject, check: `${label}.messages_schema`, status: "pass" });
+      report.add({ subject: subject, check: `${label}.messages_schema`, status: "pass" });
     } else {
       const first = (validate.errors ?? [])[0];
-      report.add({ tool: subject, check: `${label}.messages_schema`, status: "fail", message: `schema mismatch: ${first?.message ?? "unknown"}` });
+      report.add({ subject: subject, check: `${label}.messages_schema`, status: "fail", message: `schema mismatch: ${first?.message ?? "unknown"}` });
     }
   }
 }
@@ -290,13 +290,13 @@ function checkDescription(spec: ToolSpec, tool: ToolInfo, report: Report): void 
   const missing = needles.filter((n) => !desc.includes(n));
   if (missing.length > 0) {
     report.add({
-      tool: spec.name,
+      subject: spec.name,
       check: "description_contains",
       status: "fail",
       message: `description missing: ${JSON.stringify(missing)}`,
     });
   } else {
-    report.add({ tool: spec.name, check: "description_contains", status: "pass" });
+    report.add({ subject: spec.name, check: "description_contains", status: "pass" });
   }
 }
 
@@ -310,13 +310,13 @@ function checkInputSchema(spec: ToolSpec, tool: ToolInfo, report: Report): void 
   const missingRequired = want.required.filter((r) => !required.has(r));
   if (missingRequired.length > 0) {
     report.add({
-      tool: spec.name,
+      subject: spec.name,
       check: "input_schema.required",
       status: "fail",
       message: `missing required fields: ${JSON.stringify(missingRequired)}`,
     });
   } else if (want.required.length > 0) {
-    report.add({ tool: spec.name, check: "input_schema.required", status: "pass" });
+    report.add({ subject: spec.name, check: "input_schema.required", status: "pass" });
   }
 
   for (const [propName, expected] of Object.entries(want.properties)) {
@@ -324,7 +324,7 @@ function checkInputSchema(spec: ToolSpec, tool: ToolInfo, report: Report): void 
     const check = `input_schema.properties.${propName}`;
     if (!actual) {
       report.add({
-        tool: spec.name,
+        subject: spec.name,
         check,
         status: "fail",
         message: "property not declared by tool",
@@ -334,13 +334,13 @@ function checkInputSchema(spec: ToolSpec, tool: ToolInfo, report: Report): void 
     const expectedType = (expected as { type?: string }).type;
     if (expectedType && actual.type !== expectedType) {
       report.add({
-        tool: spec.name,
+        subject: spec.name,
         check,
         status: "fail",
         message: `expected type '${expectedType}', got '${actual.type ?? "undefined"}'`,
       });
     } else {
-      report.add({ tool: spec.name, check, status: "pass" });
+      report.add({ subject: spec.name, check, status: "pass" });
     }
   }
 }
@@ -360,7 +360,7 @@ async function runAssertion(
     resolvedArgs = resolveValue(assertion.call.args, stepContext) as Record<string, unknown>;
   } catch (e) {
     if (e instanceof VariableError) {
-      report.add({ tool: toolName, check: label, status: "fail", message: `variable error: ${e.message}` });
+      report.add({ subject: toolName, check: label, status: "fail", message: `variable error: ${e.message}` });
       return;
     }
     throw e;
@@ -375,7 +375,7 @@ async function runAssertion(
     );
   } catch (e) {
     report.add({
-      tool: toolName,
+      subject: toolName,
       check: label,
       status: "fail",
       message: `transport error: ${e instanceof Error ? e.message : String(e)}`,
@@ -398,7 +398,7 @@ async function runAssertion(
 }
 
 function checkStatus(
-  tool: string,
+  subject: string,
   label: string,
   expect: Expectation,
   outcome: CallOutcome,
@@ -407,16 +407,16 @@ function checkStatus(
   const expectedError = expect.status === "error";
   const check = `${label}.status`;
   if (expectedError === outcome.isError) {
-    report.add({ tool, check, status: "pass", latencyMs: outcome.latencyMs });
+    report.add({ subject, check, status: "pass", latencyMs: outcome.latencyMs });
     return;
   }
   let message = `expected status='${expect.status}', got '${outcome.isError ? "error" : "success"}'`;
   if (outcome.text) message += ` — ${outcome.text.slice(0, 200)}`;
-  report.add({ tool, check, status: "fail", message, latencyMs: outcome.latencyMs });
+  report.add({ subject, check, status: "fail", message, latencyMs: outcome.latencyMs });
 }
 
 function checkLatency(
-  tool: string,
+  subject: string,
   label: string,
   expect: Expectation,
   outcome: CallOutcome,
@@ -425,10 +425,10 @@ function checkLatency(
   if (expect.max_latency_ms === undefined) return;
   const check = `${label}.max_latency_ms`;
   if (outcome.latencyMs <= expect.max_latency_ms) {
-    report.add({ tool, check, status: "pass", latencyMs: outcome.latencyMs });
+    report.add({ subject, check, status: "pass", latencyMs: outcome.latencyMs });
   } else {
     report.add({
-      tool,
+      subject,
       check,
       status: "fail",
       message: `${Math.round(outcome.latencyMs)}ms > ${expect.max_latency_ms}ms`,
@@ -438,7 +438,7 @@ function checkLatency(
 }
 
 function checkResponseContains(
-  tool: string,
+  subject: string,
   label: string,
   expect: Expectation,
   outcome: CallOutcome,
@@ -450,18 +450,18 @@ function checkResponseContains(
   const missing = needles.filter((n) => !outcome.text.includes(n));
   if (missing.length > 0) {
     report.add({
-      tool,
+      subject,
       check,
       status: "fail",
       message: `missing substrings: ${JSON.stringify(missing)}`,
     });
   } else {
-    report.add({ tool, check, status: "pass" });
+    report.add({ subject, check, status: "pass" });
   }
 }
 
 function checkResponseSchema(
-  tool: string,
+  subject: string,
   label: string,
   expect: Expectation,
   outcome: CallOutcome,
@@ -472,11 +472,11 @@ function checkResponseSchema(
   const payload: unknown = outcome.structured ?? outcome.text;
   const validate = ajv.compile(expect.schema);
   if (validate(payload)) {
-    report.add({ tool, check, status: "pass" });
+    report.add({ subject, check, status: "pass" });
     return;
   }
   const first = (validate.errors ?? [])[0];
   const at = first?.instancePath || "/";
   const msg = first?.message ?? "schema mismatch";
-  report.add({ tool, check, status: "fail", message: `schema mismatch at ${at}: ${msg}` });
+  report.add({ subject, check, status: "fail", message: `schema mismatch at ${at}: ${msg}` });
 }

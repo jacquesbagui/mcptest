@@ -27,7 +27,7 @@ class HtmlReporter:
         rows: list[str] = []
         grouped: dict[str, list[CheckResult]] = {}
         for c in report.checks:
-            grouped.setdefault(c.tool, []).append(c)
+            grouped.setdefault(c.subject, []).append(c)
 
         for tool, checks in grouped.items():
             rows.append(f'<section class="tool"><h2>{escape(tool)}</h2>')

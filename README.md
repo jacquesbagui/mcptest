@@ -148,6 +148,13 @@ server:
   env: { KEY: value }      # stdio only
   url: <url>               # http/sse only
 
+before:                    # hooks: shell or tool call (contract-level)
+  - shell: "setup.sh"
+  - tool: seed_db
+    args: { count: 10 }
+after:
+  - shell: "cleanup.sh"
+
 tools:
   - name: <tool>
     must_exist: true       # default
@@ -156,8 +163,11 @@ tools:
       required: [<field>, ...]
       properties:
         <field>: { type: string|integer|... }
+    before: [...]          # per-tool hooks
+    after: [...]
     assertions:
-      - call:
+      - name: <step_name>  # optional; enables variable references
+        call:
           args: { ... }
           timeout_ms: <int>
         expect:
@@ -165,12 +175,40 @@ tools:
           response_contains: <str> | [<str>, ...]
           max_latency_ms: <int>
           schema: { ... }            # JSON Schema for the response
+      - call:
+          args:
+            id: "${{ steps.<step_name>.result.id }}"   # variable from named step
+        expect: { status: success }
+
+resources:
+  - uri: "config://version"
+    content_contains: "version"
+    content_schema: { type: object, required: [version] }
+  - uri_pattern: "file:///data/.*"
+    min_count: 1
+
+prompts:
+  - name: summarize
+    description_contains: "Summarize"
+    arguments:
+      - name: text
+        required: true
+    assertions:
+      - get_prompt:
+          args: { text: "Hello" }
+        expect:
+          message_count: 1
+          messages_contain: "summary"
 ```
 
 ## Status
 
 Pre-1.0. Both packages are functional and tested against a real MCP server.
 API may still change before 1.0.
+
+v0.2 adds: resources and prompts testing, named assertions with variable
+references (`${{ steps.X.result.path }}`), before/after hooks (shell + tool
+calls), `--no-hooks` flag.
 
 ## Repository layout
 

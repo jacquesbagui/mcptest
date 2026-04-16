@@ -14,7 +14,7 @@ class CheckStatus(str, Enum):
 
 @dataclass(frozen=True)
 class CheckResult:
-    tool: str
+    subject: str
     check: str
     status: CheckStatus
     message: str = ""

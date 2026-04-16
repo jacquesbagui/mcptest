@@ -50,7 +50,7 @@ export interface PromptResult {
 export type CheckStatus = "pass" | "fail" | "skip";
 
 export interface CheckResult {
-  readonly tool: string;
+  readonly subject: string;
   readonly check: string;
   readonly status: CheckStatus;
   readonly message?: string;
