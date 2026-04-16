@@ -1,6 +1,6 @@
 {
   "name": "mcpact",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Contract testing for MCP servers — TypeScript SDK.",
   "keywords": ["mcp", "model-context-protocol", "testing", "contract", "typescript", "sdk"],
   "author": "Jacques Bagui <jacques.bagui@gmail.com>",
