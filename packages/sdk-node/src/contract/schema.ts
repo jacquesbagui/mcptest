@@ -60,6 +60,7 @@ export type Expectation = z.infer<typeof ExpectationSchema>;
 
 export const AssertionSchema = z
   .object({
+    name: z.string().optional(),
     call: CallSpecSchema,
     expect: ExpectationSchema.default({}),
   })

@@ -10,6 +10,7 @@ from jsonschema.exceptions import ValidationError as JsonSchemaError
 from ..client.base import CallOutcome, McpClient, ToolInfo
 from ..report import CheckResult, CheckStatus, Report
 from .models import Assertion, Contract, Expectation, InputSchemaAssertion, ToolSpec
+from .variables import VariableError, resolve_value
 
 
 async def run_contract(
@@ -43,8 +44,9 @@ async def run_contract(
         if fail_fast and report.failed:
             return report
 
+        step_context: dict[str, Any] = {}
         for idx, assertion in enumerate(spec.assertions, start=1):
-            await _run_assertion(spec.name, idx, assertion, client, report)
+            await _run_assertion(spec.name, idx, assertion, client, report, step_context)
             if fail_fast and report.failed:
                 return report
 
@@ -131,11 +133,22 @@ async def _run_assertion(
     assertion: Assertion,
     client: McpClient,
     report: Report,
+    step_context: dict[str, Any] | None = None,
 ) -> None:
-    label = f"call#{idx}"
+    label = assertion.name or f"call#{idx}"
+    ctx = step_context if step_context is not None else {}
+
+    try:
+        resolved_args = resolve_value(dict(assertion.call.args), ctx)
+    except VariableError as e:
+        report.add(
+            CheckResult(tool_name, label, CheckStatus.FAIL, f"variable error: {e}")
+        )
+        return
+
     try:
         outcome = await client.call_tool(
-            tool_name, dict(assertion.call.args), timeout_ms=assertion.call.timeout_ms
+            tool_name, resolved_args, timeout_ms=assertion.call.timeout_ms
         )
     except Exception as e:
         report.add(
@@ -147,6 +160,13 @@ async def _run_assertion(
             )
         )
         return
+
+    if assertion.name:
+        ctx[assertion.name] = {
+            "text": outcome.text,
+            "structured": outcome.structured,
+            "is_error": outcome.is_error,
+        }
 
     _check_status(tool_name, label, assertion.expect, outcome, report)
     _check_latency(tool_name, label, assertion.expect, outcome, report)

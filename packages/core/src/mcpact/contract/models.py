@@ -52,6 +52,7 @@ class Expectation(StrictModel):
 
 
 class Assertion(StrictModel):
+    name: str | None = None
     call: CallSpec
     expect: Expectation = Expectation()
 

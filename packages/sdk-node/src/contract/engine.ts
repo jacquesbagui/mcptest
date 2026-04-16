@@ -3,6 +3,7 @@ import type { McpClient } from "../client/base.js";
 import type { CallOutcome, ToolInfo } from "../types.js";
 import { Report } from "../types.js";
 import type { Assertion, Contract, Expectation, ToolSpec } from "./schema.js";
+import { VariableError, resolveValue } from "./variables.js";
 
 const ajv = new Ajv({ strict: false, allErrors: true });
 
@@ -36,10 +37,11 @@ export async function runContract(contract: Contract, client: McpClient): Promis
     checkDescription(spec, tool, report);
     checkInputSchema(spec, tool, report);
 
+    const stepContext: Record<string, unknown> = {};
     let i = 0;
     for (const assertion of spec.assertions) {
       i += 1;
-      await runAssertion(spec.name, i, assertion, client, report);
+      await runAssertion(spec.name, i, assertion, client, report, stepContext);
     }
   }
 
@@ -119,13 +121,26 @@ async function runAssertion(
   assertion: Assertion,
   client: McpClient,
   report: Report,
+  stepContext: Record<string, unknown> = {},
 ): Promise<void> {
-  const label = `call#${idx}`;
+  const label = assertion.name ?? `call#${idx}`;
+
+  let resolvedArgs: Record<string, unknown>;
+  try {
+    resolvedArgs = resolveValue(assertion.call.args, stepContext) as Record<string, unknown>;
+  } catch (e) {
+    if (e instanceof VariableError) {
+      report.add({ tool: toolName, check: label, status: "fail", message: `variable error: ${e.message}` });
+      return;
+    }
+    throw e;
+  }
+
   let outcome: CallOutcome;
   try {
     outcome = await client.callTool(
       toolName,
-      assertion.call.args,
+      resolvedArgs,
       assertion.call.timeout_ms !== undefined ? { timeoutMs: assertion.call.timeout_ms } : {},
     );
   } catch (e) {
@@ -136,6 +151,14 @@ async function runAssertion(
       message: `transport error: ${e instanceof Error ? e.message : String(e)}`,
     });
     return;
+  }
+
+  if (assertion.name !== undefined) {
+    stepContext[assertion.name] = {
+      text: outcome.text,
+      structured: outcome.structured,
+      is_error: outcome.isError,
+    };
   }
 
   checkStatus(toolName, label, assertion.expect, outcome, report);

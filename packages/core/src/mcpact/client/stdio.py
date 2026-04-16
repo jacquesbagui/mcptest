@@ -13,8 +13,18 @@ from typing import Any, TextIO
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from pydantic import AnyUrl
 
-from .base import CallOutcome, ToolInfo
+from .base import (
+    CallOutcome,
+    PromptArgInfo,
+    PromptInfo,
+    PromptMessage,
+    PromptResult,
+    ResourceContent,
+    ResourceInfo,
+    ToolInfo,
+)
 
 
 class StdioClient:
@@ -141,3 +151,63 @@ class StdioClient:
             latency_ms=elapsed,
             raw=raw,
         )
+
+    async def list_resources(self) -> list[ResourceInfo]:
+        session = self._require_session()
+        result = await session.list_resources()
+        return [
+            ResourceInfo(
+                uri=str(r.uri),
+                name=r.name,
+                description=r.description,
+                mime_type=getattr(r, "mimeType", None),
+            )
+            for r in result.resources
+        ]
+
+    async def read_resource(self, uri: str) -> ResourceContent:
+        session = self._require_session()
+        result = await session.read_resource(AnyUrl(uri))
+        text_parts: list[str] = []
+        mime = None
+        for block in result.contents:
+            t = getattr(block, "text", None)
+            if t is not None:
+                text_parts.append(t)
+            if mime is None:
+                mime = getattr(block, "mimeType", None)
+        return ResourceContent(uri=uri, text="\n".join(text_parts), mime_type=mime)
+
+    async def list_prompts(self) -> list[PromptInfo]:
+        session = self._require_session()
+        result = await session.list_prompts()
+        return [
+            PromptInfo(
+                name=p.name,
+                description=p.description,
+                arguments=[
+                    PromptArgInfo(
+                        name=a.name,
+                        description=a.description,
+                        required=bool(a.required),
+                    )
+                    for a in (p.arguments or [])
+                ],
+            )
+            for p in result.prompts
+        ]
+
+    async def get_prompt(self, name: str, args: dict[str, Any]) -> PromptResult:
+        session = self._require_session()
+        result = await session.get_prompt(name, args)
+        messages: list[PromptMessage] = []
+        for m in result.messages:
+            text = ""
+            if hasattr(m.content, "text"):
+                text = m.content.text or ""
+            elif isinstance(m.content, list):
+                text = "\n".join(
+                    getattr(b, "text", "") for b in m.content if getattr(b, "text", None)
+                )
+            messages.append(PromptMessage(role=str(m.role), text=text))
+        return PromptResult(description=result.description, messages=messages)
