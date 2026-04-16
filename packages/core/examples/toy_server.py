@@ -6,6 +6,23 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("toy")
 
+# ---------- resources ----------
+
+@mcp.resource("config://version")
+def config_version() -> str:
+    """The server's version string."""
+    return '{"version": "0.1.0", "name": "toy"}'
+
+
+# ---------- prompts ----------
+
+@mcp.prompt()
+def greet(name: str) -> str:
+    """Generate a greeting for the given name."""
+    return f"Hello, {name}! Welcome to the toy MCP server."
+
+
+# ---------- tools ----------
 
 @mcp.tool()
 def echo(message: str) -> str:

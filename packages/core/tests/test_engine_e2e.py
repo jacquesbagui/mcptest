@@ -37,6 +37,6 @@ async def test_example_contract_passes() -> None:
         await client.close()
 
     assert report.failed == 0, [
-        (c.tool, c.check, c.message) for c in report.checks if c.status.value == "fail"
+        (c.subject, c.check, c.message) for c in report.checks if c.status.value == "fail"
     ]
     assert report.passed > 0

@@ -23,7 +23,7 @@ class ConsoleReporter:
     def render(self, report: Report) -> None:
         grouped: dict[str, list[CheckResult]] = defaultdict(list)
         for c in report.checks:
-            grouped[c.tool].append(c)
+            grouped[c.subject].append(c)
 
         for tool, checks in grouped.items():
             self.console.print(Text(tool, style="bold cyan"))

@@ -18,7 +18,7 @@ class JsonReporter:
             "skipped": report.skipped,
             "checks": [
                 {
-                    "tool": c.tool,
+                    "subject": c.subject,
                     "check": c.check,
                     "status": c.status.value,
                     "message": c.message,

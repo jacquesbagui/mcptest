@@ -12,10 +12,45 @@ export interface CallOutcome {
   readonly raw?: unknown;
 }
 
+export interface ResourceInfo {
+  readonly uri: string;
+  readonly name: string | undefined;
+  readonly description: string | undefined;
+  readonly mimeType: string | undefined;
+}
+
+export interface ResourceContent {
+  readonly uri: string;
+  readonly text: string;
+  readonly mimeType: string | undefined;
+}
+
+export interface PromptArgInfo {
+  readonly name: string;
+  readonly description: string | undefined;
+  readonly required: boolean;
+}
+
+export interface PromptInfo {
+  readonly name: string;
+  readonly description: string | undefined;
+  readonly arguments: PromptArgInfo[];
+}
+
+export interface PromptMessage {
+  readonly role: string;
+  readonly text: string;
+}
+
+export interface PromptResult {
+  readonly description: string | undefined;
+  readonly messages: PromptMessage[];
+}
+
 export type CheckStatus = "pass" | "fail" | "skip";
 
 export interface CheckResult {
-  readonly tool: string;
+  readonly subject: string;
   readonly check: string;
   readonly status: CheckStatus;
   readonly message?: string;

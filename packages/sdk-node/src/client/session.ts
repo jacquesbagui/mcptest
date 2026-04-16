@@ -1,6 +1,14 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
-import type { CallOutcome, ToolInfo } from "../types.js";
+import type {
+  CallOutcome,
+  PromptInfo,
+  PromptMessage,
+  PromptResult,
+  ResourceContent,
+  ResourceInfo,
+  ToolInfo,
+} from "../types.js";
 import type { CallToolOptions, McpClient } from "./base.js";
 
 /**
@@ -89,6 +97,57 @@ export abstract class SessionClient implements McpClient {
       latencyMs: elapsed,
       raw,
     };
+  }
+  async listResources(): Promise<ResourceInfo[]> {
+    const res = await this.require().listResources();
+    return res.resources.map((r) => ({
+      uri: String(r.uri),
+      name: r.name,
+      description: r.description,
+      mimeType: (r as { mimeType?: string }).mimeType,
+    }));
+  }
+
+  async readResource(uri: string): Promise<ResourceContent> {
+    const res = await this.require().readResource({ uri });
+    const textParts: string[] = [];
+    let mime: string | undefined;
+    for (const block of res.contents) {
+      const t = (block as { text?: string }).text;
+      if (t !== undefined) textParts.push(t);
+      if (mime === undefined) mime = (block as { mimeType?: string }).mimeType;
+    }
+    return { uri, text: textParts.join("\n"), mimeType: mime };
+  }
+
+  async listPrompts(): Promise<PromptInfo[]> {
+    const res = await this.require().listPrompts();
+    return res.prompts.map((p) => ({
+      name: p.name,
+      description: p.description,
+      arguments: (p.arguments ?? []).map((a) => ({
+        name: a.name,
+        description: a.description,
+        required: Boolean(a.required),
+      })),
+    }));
+  }
+
+  async getPrompt(name: string, args: Record<string, unknown>): Promise<PromptResult> {
+    const res = await this.require().getPrompt({ name, arguments: args as Record<string, string> });
+    const messages: PromptMessage[] = (res.messages ?? []).map((m) => {
+      let text = "";
+      if (typeof m.content === "object" && m.content !== null && "text" in m.content) {
+        text = String((m.content as { text: unknown }).text);
+      } else if (Array.isArray(m.content)) {
+        text = m.content
+          .filter((b): b is { text: string } => "text" in (b as object))
+          .map((b) => b.text)
+          .join("\n");
+      }
+      return { role: String(m.role), text };
+    });
+    return { description: res.description, messages };
   }
 }
 

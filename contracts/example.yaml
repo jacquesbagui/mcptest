@@ -14,13 +14,23 @@ tools:
         message:
           type: string
     assertions:
-      - call:
+      - name: greet
+        call:
           args:
             message: "hello world"
         expect:
           status: success
           response_contains: "hello world"
           max_latency_ms: 2000
+
+      # v0.2: named step + variable reference
+      - name: echo_back
+        call:
+          args:
+            message: "re: ${{ steps.greet.result.result }}"
+        expect:
+          status: success
+          response_contains: "re: hello world"
 
   - name: add
     must_exist: true
@@ -40,3 +50,29 @@ tools:
           args: {}
         expect:
           status: error
+
+resources:
+  - uri: "config://version"
+    must_exist: true
+    content_contains: "version"
+    content_schema:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: string
+
+prompts:
+  - name: greet
+    must_exist: true
+    description_contains: "greeting"
+    arguments:
+      - name: name
+        required: true
+    assertions:
+      - get_prompt:
+          args:
+            name: "Alice"
+        expect:
+          message_count: 1
+          messages_contain: "Alice"

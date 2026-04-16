@@ -52,8 +52,66 @@ class Expectation(StrictModel):
 
 
 class Assertion(StrictModel):
+    name: str | None = None
     call: CallSpec
     expect: Expectation = Expectation()
+
+
+class ResourceSpec(StrictModel):
+    uri: str | None = None
+    uri_pattern: str | None = None
+    must_exist: bool = True
+    min_count: int | None = None
+    content_contains: str | list[str] | None = None
+    content_schema: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def _validate_target(self) -> ResourceSpec:
+        if not self.uri and not self.uri_pattern:
+            raise ValueError("resource spec requires either 'uri' or 'uri_pattern'")
+        if self.uri and self.uri_pattern:
+            raise ValueError("resource spec cannot have both 'uri' and 'uri_pattern'")
+        return self
+
+
+class PromptArgSpec(StrictModel):
+    name: str
+    required: bool = True
+
+
+class PromptGetSpec(StrictModel):
+    args: dict[str, Any] = Field(default_factory=dict)
+
+
+class PromptExpectation(StrictModel):
+    messages_contain: str | list[str] | None = None
+    message_count: int | None = None
+    messages_schema: dict[str, Any] | None = None
+
+
+class PromptAssertion(StrictModel):
+    get_prompt: PromptGetSpec
+    expect: PromptExpectation = PromptExpectation()
+
+
+class PromptSpec(StrictModel):
+    name: str
+    must_exist: bool = True
+    description_contains: str | list[str] | None = None
+    arguments: list[PromptArgSpec] = Field(default_factory=list)
+    assertions: list[PromptAssertion] = Field(default_factory=list)
+
+
+class HookShell(StrictModel):
+    shell: str
+
+
+class HookToolCall(StrictModel):
+    tool: str
+    args: dict[str, Any] = Field(default_factory=dict)
+
+
+HookAction = HookShell | HookToolCall
 
 
 class ToolSpec(StrictModel):
@@ -62,6 +120,8 @@ class ToolSpec(StrictModel):
     description_contains: str | list[str] | None = None
     input_schema: InputSchemaAssertion | None = None
     assertions: list[Assertion] = Field(default_factory=list)
+    before: list[HookAction] = Field(default_factory=list)
+    after: list[HookAction] = Field(default_factory=list)
 
 
 class SnapshotConfig(StrictModel):
@@ -74,4 +134,8 @@ class SnapshotConfig(StrictModel):
 class Contract(StrictModel):
     server: ServerConfig
     tools: list[ToolSpec] = Field(default_factory=list)
+    resources: list[ResourceSpec] = Field(default_factory=list)
+    prompts: list[PromptSpec] = Field(default_factory=list)
+    before: list[HookAction] = Field(default_factory=list)
+    after: list[HookAction] = Field(default_factory=list)
     snapshots: SnapshotConfig = SnapshotConfig()

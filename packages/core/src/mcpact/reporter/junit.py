@@ -24,7 +24,7 @@ class JunitReporter:
                 testsuite,
                 "testcase",
                 {
-                    "classname": c.tool,
+                    "classname": c.subject,
                     "name": c.check,
                     "time": f"{(c.latency_ms or 0) / 1000:.3f}",
                 },
