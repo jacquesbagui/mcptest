@@ -10,6 +10,7 @@ from jsonschema.exceptions import ValidationError as JsonSchemaError
 
 from ..client.base import CallOutcome, McpClient, ResourceInfo, ToolInfo
 from ..report import CheckResult, CheckStatus, Report
+from .hooks import run_hooks
 from .models import (
     Assertion,
     Contract,
@@ -23,49 +24,82 @@ from .variables import VariableError, resolve_value
 
 
 async def run_contract(
-    contract: Contract, client: McpClient, *, fail_fast: bool = False
+    contract: Contract,
+    client: McpClient,
+    *,
+    fail_fast: bool = False,
+    no_hooks: bool = False,
 ) -> Report:
     """Execute every check the contract declares and return a Report.
 
-    When `fail_fast` is True, stop as soon as any check fails. Skipped tools
-    do not count as failures.
+    When `fail_fast` is True, stop as soon as any check fails.
+    When `no_hooks` is True, before/after hooks are skipped.
     """
     report = Report()
-    tools = await client.list_tools()
-    by_name = {t.name: t for t in tools}
 
-    for spec in contract.tools:
-        tool = by_name.get(spec.name)
-        if tool is None:
-            if spec.must_exist:
-                report.add(
-                    CheckResult(spec.name, "exists", CheckStatus.FAIL, "tool not exposed by server")
-                )
-                if fail_fast:
-                    return report
-            else:
-                report.add(CheckResult(spec.name, "exists", CheckStatus.SKIP, "optional tool absent"))
-            continue
-        report.add(CheckResult(spec.name, "exists", CheckStatus.PASS))
-
-        _check_description(spec, tool, report)
-        _check_input_schema(spec, tool, report)
-        if fail_fast and report.failed:
+    if not no_hooks and contract.before:
+        try:
+            await run_hooks(contract.before, client)
+        except Exception as e:
+            report.add(CheckResult("contract", "before", CheckStatus.FAIL, f"hook error: {e}"))
             return report
 
-        step_context: dict[str, Any] = {}
-        for idx, assertion in enumerate(spec.assertions, start=1):
-            await _run_assertion(spec.name, idx, assertion, client, report, step_context)
+    try:
+        tools = await client.list_tools()
+        by_name = {t.name: t for t in tools}
+
+        for spec in contract.tools:
+            tool = by_name.get(spec.name)
+            if tool is None:
+                if spec.must_exist:
+                    report.add(
+                        CheckResult(spec.name, "exists", CheckStatus.FAIL, "tool not exposed by server")
+                    )
+                    if fail_fast:
+                        return report
+                else:
+                    report.add(CheckResult(spec.name, "exists", CheckStatus.SKIP, "optional tool absent"))
+                continue
+            report.add(CheckResult(spec.name, "exists", CheckStatus.PASS))
+
+            _check_description(spec, tool, report)
+            _check_input_schema(spec, tool, report)
             if fail_fast and report.failed:
                 return report
 
-    if contract.resources:
-        await _run_resources(contract.resources, client, report, fail_fast)
-        if fail_fast and report.failed:
-            return report
+            if not no_hooks and spec.before:
+                try:
+                    await run_hooks(spec.before, client)
+                except Exception as e:
+                    report.add(CheckResult(spec.name, "before", CheckStatus.FAIL, f"hook error: {e}"))
+                    continue
 
-    if contract.prompts:
-        await _run_prompts(contract.prompts, client, report, fail_fast)
+            step_context: dict[str, Any] = {}
+            try:
+                for idx, assertion in enumerate(spec.assertions, start=1):
+                    await _run_assertion(spec.name, idx, assertion, client, report, step_context)
+                    if fail_fast and report.failed:
+                        return report
+            finally:
+                if not no_hooks and spec.after:
+                    try:
+                        await run_hooks(spec.after, client, step_context)
+                    except Exception as e:
+                        report.add(CheckResult(spec.name, "after", CheckStatus.FAIL, f"hook error: {e}"))
+
+        if contract.resources:
+            await _run_resources(contract.resources, client, report, fail_fast)
+            if fail_fast and report.failed:
+                return report
+
+        if contract.prompts:
+            await _run_prompts(contract.prompts, client, report, fail_fast)
+    finally:
+        if not no_hooks and contract.after:
+            try:
+                await run_hooks(contract.after, client)
+            except Exception as e:
+                report.add(CheckResult("contract", "after", CheckStatus.FAIL, f"hook error: {e}"))
 
     return report
 

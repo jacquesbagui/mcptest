@@ -67,6 +67,13 @@ export const AssertionSchema = z
   .strict();
 export type Assertion = z.infer<typeof AssertionSchema>;
 
+export const HookShellSchema = z.object({ shell: z.string() }).strict();
+export const HookToolCallSchema = z
+  .object({ tool: z.string(), args: z.record(z.string(), z.unknown()).default({}) })
+  .strict();
+export const HookActionSchema = z.union([HookShellSchema, HookToolCallSchema]);
+export type HookAction = z.infer<typeof HookActionSchema>;
+
 export const ToolSpecSchema = z
   .object({
     name: z.string(),
@@ -74,6 +81,8 @@ export const ToolSpecSchema = z
     description_contains: StringOrStringArray.optional(),
     input_schema: InputSchemaAssertionSchema.optional(),
     assertions: z.array(AssertionSchema).default([]),
+    before: z.array(HookActionSchema).default([]),
+    after: z.array(HookActionSchema).default([]),
   })
   .strict();
 export type ToolSpec = z.infer<typeof ToolSpecSchema>;
@@ -154,6 +163,8 @@ export const ContractSchema = z
     tools: z.array(ToolSpecSchema).default([]),
     resources: z.array(ResourceSpecSchema).default([]),
     prompts: z.array(PromptSpecSchema).default([]),
+    before: z.array(HookActionSchema).default([]),
+    after: z.array(HookActionSchema).default([]),
     snapshots: SnapshotConfigSchema.default({}),
   })
   .strict();

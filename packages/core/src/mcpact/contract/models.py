@@ -57,14 +57,6 @@ class Assertion(StrictModel):
     expect: Expectation = Expectation()
 
 
-class ToolSpec(StrictModel):
-    name: str
-    must_exist: bool = True
-    description_contains: str | list[str] | None = None
-    input_schema: InputSchemaAssertion | None = None
-    assertions: list[Assertion] = Field(default_factory=list)
-
-
 class ResourceSpec(StrictModel):
     uri: str | None = None
     uri_pattern: str | None = None
@@ -110,6 +102,28 @@ class PromptSpec(StrictModel):
     assertions: list[PromptAssertion] = Field(default_factory=list)
 
 
+class HookShell(StrictModel):
+    shell: str
+
+
+class HookToolCall(StrictModel):
+    tool: str
+    args: dict[str, Any] = Field(default_factory=dict)
+
+
+HookAction = HookShell | HookToolCall
+
+
+class ToolSpec(StrictModel):
+    name: str
+    must_exist: bool = True
+    description_contains: str | list[str] | None = None
+    input_schema: InputSchemaAssertion | None = None
+    assertions: list[Assertion] = Field(default_factory=list)
+    before: list[HookAction] = Field(default_factory=list)
+    after: list[HookAction] = Field(default_factory=list)
+
+
 class SnapshotConfig(StrictModel):
     enabled: bool = False
     baseline: str = ".mcpact/baseline.json"
@@ -122,4 +136,6 @@ class Contract(StrictModel):
     tools: list[ToolSpec] = Field(default_factory=list)
     resources: list[ResourceSpec] = Field(default_factory=list)
     prompts: list[PromptSpec] = Field(default_factory=list)
+    before: list[HookAction] = Field(default_factory=list)
+    after: list[HookAction] = Field(default_factory=list)
     snapshots: SnapshotConfig = SnapshotConfig()

@@ -62,10 +62,13 @@ def run_cmd(
     verbose: Annotated[
         bool, typer.Option("--verbose", "-v", help="Forward server stderr to this terminal.")
     ] = False,
+    no_hooks: Annotated[
+        bool, typer.Option("--no-hooks", help="Skip before/after hooks (safety).")
+    ] = False,
 ) -> None:
     """Run contract assertions against an MCP server."""
     contract_obj = _load_or_exit(contract)
-    report = asyncio.run(_run(contract_obj, fail_fast=fail_fast, verbose=verbose))
+    report = asyncio.run(_run(contract_obj, fail_fast=fail_fast, verbose=verbose, no_hooks=no_hooks))
     _emit_report(report, reporter, out)
     raise typer.Exit(code=0 if report.ok else 1)
 
@@ -219,7 +222,9 @@ def _resolve_server(
     return ServerConfig(transport=t, url=server)
 
 
-async def _run(contract_obj: Contract, *, fail_fast: bool = False, verbose: bool = False) -> Report:
+async def _run(
+    contract_obj: Contract, *, fail_fast: bool = False, verbose: bool = False, no_hooks: bool = False
+) -> Report:
     client = build_client(contract_obj.server, verbose=verbose)
     try:
         try:
@@ -228,7 +233,7 @@ async def _run(contract_obj: Contract, *, fail_fast: bool = False, verbose: bool
             _dump_captured_stderr(client, context="connection")
             err_console.print(f"[red]Failed to connect to server:[/red] {e}")
             raise typer.Exit(code=1) from e
-        return await run_contract(contract_obj, client, fail_fast=fail_fast)
+        return await run_contract(contract_obj, client, fail_fast=fail_fast, no_hooks=no_hooks)
     finally:
         await client.close()
 
@@ -268,5 +273,5 @@ def _emit_report(report: Report, reporter: str, out: Path | None) -> None:
         typer.echo(text)
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
     app()
