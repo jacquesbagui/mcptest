@@ -78,6 +78,66 @@ export const ToolSpecSchema = z
   .strict();
 export type ToolSpec = z.infer<typeof ToolSpecSchema>;
 
+export const ResourceSpecSchema = z
+  .object({
+    uri: z.string().optional(),
+    uri_pattern: z.string().optional(),
+    must_exist: z.boolean().default(true),
+    min_count: z.number().int().nonnegative().optional(),
+    content_contains: z.union([z.string(), z.array(z.string())]).optional(),
+    content_schema: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict()
+  .superRefine((s, ctx) => {
+    if (!s.uri && !s.uri_pattern)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "resource spec requires 'uri' or 'uri_pattern'" });
+    if (s.uri && s.uri_pattern)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "resource spec cannot have both 'uri' and 'uri_pattern'" });
+  });
+export type ResourceSpec = z.infer<typeof ResourceSpecSchema>;
+
+export const PromptArgSpecSchema = z
+  .object({
+    name: z.string(),
+    required: z.boolean().default(true),
+  })
+  .strict();
+export type PromptArgSpec = z.infer<typeof PromptArgSpecSchema>;
+
+export const PromptGetSpecSchema = z
+  .object({
+    args: z.record(z.string(), z.unknown()).default({}),
+  })
+  .strict();
+
+export const PromptExpectationSchema = z
+  .object({
+    messages_contain: z.union([z.string(), z.array(z.string())]).optional(),
+    message_count: z.number().int().nonnegative().optional(),
+    messages_schema: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+export type PromptExpectation = z.infer<typeof PromptExpectationSchema>;
+
+export const PromptAssertionSchema = z
+  .object({
+    get_prompt: PromptGetSpecSchema,
+    expect: PromptExpectationSchema.default({}),
+  })
+  .strict();
+export type PromptAssertion = z.infer<typeof PromptAssertionSchema>;
+
+export const PromptSpecSchema = z
+  .object({
+    name: z.string(),
+    must_exist: z.boolean().default(true),
+    description_contains: z.union([z.string(), z.array(z.string())]).optional(),
+    arguments: z.array(PromptArgSpecSchema).default([]),
+    assertions: z.array(PromptAssertionSchema).default([]),
+  })
+  .strict();
+export type PromptSpec = z.infer<typeof PromptSpecSchema>;
+
 export const SnapshotConfigSchema = z
   .object({
     enabled: z.boolean().default(false),
@@ -92,6 +152,8 @@ export const ContractSchema = z
   .object({
     server: ServerConfigSchema,
     tools: z.array(ToolSpecSchema).default([]),
+    resources: z.array(ResourceSpecSchema).default([]),
+    prompts: z.array(PromptSpecSchema).default([]),
     snapshots: SnapshotConfigSchema.default({}),
   })
   .strict();

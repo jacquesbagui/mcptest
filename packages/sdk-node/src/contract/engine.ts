@@ -1,8 +1,16 @@
 import Ajv from "ajv";
 import type { McpClient } from "../client/base.js";
-import type { CallOutcome, ToolInfo } from "../types.js";
+import type { CallOutcome, ResourceInfo, ToolInfo } from "../types.js";
 import { Report } from "../types.js";
-import type { Assertion, Contract, Expectation, ToolSpec } from "./schema.js";
+import type {
+  Assertion,
+  Contract,
+  Expectation,
+  PromptAssertion,
+  PromptSpec,
+  ResourceSpec,
+  ToolSpec,
+} from "./schema.js";
 import { VariableError, resolveValue } from "./variables.js";
 
 const ajv = new Ajv({ strict: false, allErrors: true });
@@ -45,7 +53,229 @@ export async function runContract(contract: Contract, client: McpClient): Promis
     }
   }
 
+  if (contract.resources.length > 0) {
+    await runResources(contract.resources, client, report);
+  }
+  if (contract.prompts.length > 0) {
+    await runPrompts(contract.prompts, client, report);
+  }
+
   return report;
+}
+
+// ---------- resources ----------
+
+async function runResources(
+  specs: ResourceSpec[],
+  client: McpClient,
+  report: Report,
+): Promise<void> {
+  const resources = await client.listResources();
+  for (const spec of specs) {
+    if (spec.uri !== undefined) {
+      await checkResourceByUri(spec, resources, client, report);
+    } else if (spec.uri_pattern !== undefined) {
+      checkResourceByPattern(spec, resources, report);
+    }
+  }
+}
+
+async function checkResourceByUri(
+  spec: ResourceSpec,
+  resources: ResourceInfo[],
+  client: McpClient,
+  report: Report,
+): Promise<void> {
+  const uri = spec.uri!;
+  const subject = `resource:${uri}`;
+  const found = resources.some((r) => r.uri === uri);
+  if (!found) {
+    if (spec.must_exist) {
+      report.add({ tool: subject, check: "exists", status: "fail", message: "resource not listed" });
+    } else {
+      report.add({ tool: subject, check: "exists", status: "skip", message: "optional resource absent" });
+    }
+    return;
+  }
+  report.add({ tool: subject, check: "exists", status: "pass" });
+
+  if (spec.content_contains !== undefined || spec.content_schema !== undefined) {
+    let text: string;
+    try {
+      const content = await client.readResource(uri);
+      text = content.text;
+    } catch (e) {
+      report.add({ tool: subject, check: "read", status: "fail", message: `read failed: ${e instanceof Error ? e.message : String(e)}` });
+      return;
+    }
+    checkResourceContent(subject, spec, text, report);
+  }
+}
+
+function checkResourceByPattern(
+  spec: ResourceSpec,
+  resources: ResourceInfo[],
+  report: Report,
+): void {
+  const pat = spec.uri_pattern!;
+  const subject = `resource:~${pat}`;
+  let re: RegExp;
+  try {
+    re = new RegExp(pat);
+  } catch (e) {
+    report.add({ tool: subject, check: "pattern", status: "fail", message: `invalid regex: ${e instanceof Error ? e.message : String(e)}` });
+    return;
+  }
+  const matched = resources.filter((r) => re.test(r.uri));
+  if (spec.min_count !== undefined) {
+    if (matched.length < spec.min_count) {
+      report.add({ tool: subject, check: "min_count", status: "fail", message: `matched ${matched.length}, expected >= ${spec.min_count}` });
+    } else {
+      report.add({ tool: subject, check: "min_count", status: "pass" });
+    }
+  }
+  if (matched.length === 0 && spec.must_exist) {
+    report.add({ tool: subject, check: "exists", status: "fail", message: "no resources match pattern" });
+  }
+}
+
+function checkResourceContent(subject: string, spec: ResourceSpec, text: string, report: Report): void {
+  if (spec.content_contains !== undefined) {
+    const needles = typeof spec.content_contains === "string" ? [spec.content_contains] : spec.content_contains;
+    const missing = needles.filter((n) => !text.includes(n));
+    if (missing.length > 0) {
+      report.add({ tool: subject, check: "content_contains", status: "fail", message: `missing: ${JSON.stringify(missing)}` });
+    } else {
+      report.add({ tool: subject, check: "content_contains", status: "pass" });
+    }
+  }
+  if (spec.content_schema !== undefined) {
+    let payload: unknown;
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      report.add({ tool: subject, check: "content_schema", status: "fail", message: "content is not valid JSON" });
+      return;
+    }
+    const validate = ajv.compile(spec.content_schema);
+    if (validate(payload)) {
+      report.add({ tool: subject, check: "content_schema", status: "pass" });
+    } else {
+      const first = (validate.errors ?? [])[0];
+      report.add({ tool: subject, check: "content_schema", status: "fail", message: `schema mismatch: ${first?.message ?? "unknown"}` });
+    }
+  }
+}
+
+// ---------- prompts ----------
+
+async function runPrompts(
+  specs: PromptSpec[],
+  client: McpClient,
+  report: Report,
+): Promise<void> {
+  const prompts = await client.listPrompts();
+  const byName = new Map(prompts.map((p) => [p.name, p]));
+
+  for (const spec of specs) {
+    const subject = `prompt:${spec.name}`;
+    const prompt = byName.get(spec.name);
+    if (!prompt) {
+      if (spec.must_exist) {
+        report.add({ tool: subject, check: "exists", status: "fail", message: "prompt not listed" });
+      } else {
+        report.add({ tool: subject, check: "exists", status: "skip" });
+      }
+      continue;
+    }
+    report.add({ tool: subject, check: "exists", status: "pass" });
+
+    if (spec.description_contains !== undefined) {
+      const needles = typeof spec.description_contains === "string" ? [spec.description_contains] : spec.description_contains;
+      const desc = prompt.description ?? "";
+      const missing = needles.filter((n) => !desc.includes(n));
+      if (missing.length > 0) {
+        report.add({ tool: subject, check: "description_contains", status: "fail", message: `description missing: ${JSON.stringify(missing)}` });
+      } else {
+        report.add({ tool: subject, check: "description_contains", status: "pass" });
+      }
+    }
+
+    if (spec.arguments.length > 0) {
+      const names = new Set(prompt.arguments.map((a) => a.name));
+      for (const as of spec.arguments) {
+        const check = `arg:${as.name}`;
+        if (!names.has(as.name)) {
+          report.add({ tool: subject, check, status: "fail", message: "argument not declared" });
+        } else {
+          report.add({ tool: subject, check, status: "pass" });
+          if (as.required) {
+            const actual = prompt.arguments.find((a) => a.name === as.name);
+            if (!actual?.required) {
+              report.add({ tool: subject, check: `${check}.required`, status: "fail", message: "expected required" });
+            } else {
+              report.add({ tool: subject, check: `${check}.required`, status: "pass" });
+            }
+          }
+        }
+      }
+    }
+
+    let pi = 0;
+    for (const pa of spec.assertions) {
+      pi += 1;
+      await runPromptAssertion(subject, pi, spec.name, pa, client, report);
+    }
+  }
+}
+
+async function runPromptAssertion(
+  subject: string,
+  idx: number,
+  promptName: string,
+  pa: PromptAssertion,
+  client: McpClient,
+  report: Report,
+): Promise<void> {
+  const label = `get#${idx}`;
+  let result: Awaited<ReturnType<McpClient["getPrompt"]>>;
+  try {
+    result = await client.getPrompt(promptName, pa.get_prompt.args);
+  } catch (e) {
+    report.add({ tool: subject, check: label, status: "fail", message: `get_prompt error: ${e instanceof Error ? e.message : String(e)}` });
+    return;
+  }
+
+  const expect = pa.expect;
+  if (expect.message_count !== undefined) {
+    if (result.messages.length !== expect.message_count) {
+      report.add({ tool: subject, check: `${label}.message_count`, status: "fail", message: `expected ${expect.message_count}, got ${result.messages.length}` });
+    } else {
+      report.add({ tool: subject, check: `${label}.message_count`, status: "pass" });
+    }
+  }
+
+  if (expect.messages_contain !== undefined) {
+    const needles = typeof expect.messages_contain === "string" ? [expect.messages_contain] : expect.messages_contain;
+    const allText = result.messages.map((m) => m.text).join(" ");
+    const missing = needles.filter((n) => !allText.includes(n));
+    if (missing.length > 0) {
+      report.add({ tool: subject, check: `${label}.messages_contain`, status: "fail", message: `missing: ${JSON.stringify(missing)}` });
+    } else {
+      report.add({ tool: subject, check: `${label}.messages_contain`, status: "pass" });
+    }
+  }
+
+  if (expect.messages_schema !== undefined) {
+    const payload = result.messages.map((m) => ({ role: m.role, text: m.text }));
+    const validate = ajv.compile(expect.messages_schema);
+    if (validate(payload)) {
+      report.add({ tool: subject, check: `${label}.messages_schema`, status: "pass" });
+    } else {
+      const first = (validate.errors ?? [])[0];
+      report.add({ tool: subject, check: `${label}.messages_schema`, status: "fail", message: `schema mismatch: ${first?.message ?? "unknown"}` });
+    }
+  }
 }
 
 function asList(v: string | string[] | undefined): string[] {
